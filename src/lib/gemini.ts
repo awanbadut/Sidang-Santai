@@ -230,7 +230,7 @@ export async function getSummary(
   }
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-1.5-flash",
     contents: prompt,
     config: {
       systemInstruction: SYSTEM_INSTRUCTION_BASE,
