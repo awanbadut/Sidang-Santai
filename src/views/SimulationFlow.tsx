@@ -287,7 +287,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                     {file ? (
                       <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center gap-2 md:gap-4">
                         <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-400 rounded-xl md:rounded-[1.5rem] flex items-center justify-center text-white border-[3px] md:border-[4px] border-emerald-200 shadow-sm">
-                          <CheckCircle2 size={32} md:size={40} strokeWidth={3} />
+                          <CheckCircle2 strokeWidth={3} className="w-8 h-8 md:w-10 md:h-10" />
                         </div>
                         <div className="text-center">
                           <p className="font-black text-sm md:text-lg text-emerald-800 truncate max-w-[200px] md:max-w-[250px]">{file.name}</p>
@@ -297,7 +297,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                     ) : (
                       <div className="flex flex-col items-center gap-2 md:gap-4">
                         <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-100 rounded-xl md:rounded-[1.5rem] flex items-center justify-center text-slate-400 border-[3px] md:border-[4px] border-slate-200">
-                          <Upload size={30} md:size={36} strokeWidth={2.5} />
+                          <Upload strokeWidth={2.5} className="w-7 h-7 md:w-9 md:h-9" />
                         </div>
                         <div className="text-center px-4">
                           <p className="font-black text-base md:text-lg text-slate-700 leading-tight">Taruh Draf / CV Kamu di Sini</p>
@@ -356,16 +356,17 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                   ? ['shinta', 'maya', 'budi'] 
                   : ['metod', 'ima', 'aris']
                 ).map((pid) => {
-                  const isActive = currentTurn?.panelistId === pid;
+                  const panelistId = pid as PanelistId;
+                  const isActive = currentTurn?.panelistId === panelistId;
                   return (
                     <div key={pid} className={cn(
                       "flex items-center gap-3 transition-all duration-300",
                       isActive ? "opacity-100 scale-110" : "opacity-40 grayscale-[0.5] scale-90"
                     )}>
-                      <PanelistAvatar id={pid} size="sm" isThinking={isActive && isAnswering} />
+                      <PanelistAvatar id={panelistId} size="sm" isThinking={isActive && isAnswering} />
                       {isActive && (
                         <span className="text-xs font-black text-slate-700 uppercase tracking-tight hidden md:block">
-                          {PANELISTS[pid].name}
+                          {PANELISTS[panelistId].name}
                         </span>
                       )}
                     </div>

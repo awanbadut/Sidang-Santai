@@ -31,6 +31,7 @@ export default function LiveMeetingFlow({
   const isMicOnRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const transcriptRef = useRef<string>('');
   const [conversation, setConversation] = useState<QuestionEntry[]>([]);
   const [activeSpeakers, setActiveSpeakers] = useState<PanelistId[]>([]);
   const [isAThinking, setIsAThinking] = useState(false);
@@ -92,54 +93,70 @@ export default function LiveMeetingFlow({
           }
         }
 
-        const fullText = interimTranscript || currentFinalTranscript;
-        if (!fullText.trim()) return;
+        const fullText = (currentFinalTranscript || interimTranscript).trim();
+        if (!fullText) return;
 
-        // If user is speaking, STOP AI speech (interruption)
-        // We do this BEFORE the feedback guard to allow real humans to cut off the AI
-        if (synthRef.current?.speaking) {
-          // Only cancel if the speech is long enough to be a real interruption,
-          // avoiding false positives from background noise.
-          if (fullText.length > 5) {
-            synthRef.current.cancel();
-            setActiveSpeakers([]);
-            setAiCaptions('');
-            isAiSpeakingRef.current = false;
-            if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
-          }
+        // Visual feedback
+        setTranscript(fullText);
+        transcriptRef.current = fullText;
+
+        // Interruption logic
+        if (synthRef.current?.speaking && fullText.length > 3) {
+          synthRef.current.cancel();
+          setActiveSpeakers([]);
+          setAiCaptions('');
+          isAiSpeakingRef.current = false;
+          if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
         }
 
-        // If AI is speaking and we didn't interrupt it, ignore mic input (feedback guard)
+        // If AI is actually speaking (and we didn't interrupt it above), don't process further
         if (isAiSpeakingRef.current) return;
 
-        setTranscript(fullText);
-        
-        // Reset silence timer on every result
+        // Reset timers
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
         
-        // If we have some significant text, start a timer to auto-submit after pause
-        if (fullText.length > 1) {
-          if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
-          silenceTimerRef.current = setTimeout(() => {
-            handleUserSpeech(fullText);
-          }, 1800); // slightly faster turn response
-        }
+        // Dynamic silence duration: longer for longer speech
+        const silenceDuration = Math.min(2500, Math.max(1500, fullText.length * 20));
+        
+        silenceTimerRef.current = setTimeout(() => {
+          handleUserSpeech(fullText);
+        }, silenceDuration);
       };
 
       recognition.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
+        // If 'no-speech' error occurs, we don't treat it as a hard failure.
+        // It just means no audio was detected, and we want it to potentially restart in onend.
+        if (event.error !== 'no-speech') {
+          console.error('Speech recognition error', event.error);
+        }
         setIsListening(false);
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        
+        // Check if we have unsubmitted transcript when mic ends
+        const currentTranscript = transcriptRef.current;
+        if (currentTranscript && currentTranscript.length > 2 && !isAiSpeakingRef.current && !isAThinking) {
+          handleUserSpeech(currentTranscript).catch(err => {
+            console.error("Delayed speech submission failed", err);
+          });
+        }
+
         // Auto restart if mic is supposed to be on
         if (isMicOnRef.current) {
-          try {
-            recognitionRef.current?.start();
-          } catch (e) {
-            console.warn("Recognition restart failed", e);
-          }
+          setTimeout(() => {
+            if (isMicOnRef.current) {
+              try {
+                recognitionRef.current?.start();
+              } catch (e: any) {
+                if (e.name !== 'InvalidStateError') {
+                  console.warn("Recognition restart failed", e);
+                }
+              }
+            }
+          }, 200);
         }
       };
 
@@ -176,23 +193,35 @@ export default function LiveMeetingFlow({
     isMicOnRef.current = newState;
 
     if (!newState) {
-      recognitionRef.current?.stop();
+      try {
+        recognitionRef.current?.stop();
+      } catch (e) {
+        console.warn("Stop failed", e);
+      }
       setIsListening(false);
       if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     } else {
-      recognitionRef.current?.start();
-      setIsListening(true);
-      startProdTimer();
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+        startProdTimer();
+      } catch (e) {
+        console.error("Start failed", e);
+      }
     }
   };
 
   const handleUserSpeech = async (text: string) => {
-    if (!text.trim() || isAThinking) return;
+    // Avoid processing the same text twice or empty text
+    const cleanText = text.trim();
+    if (!cleanText || isAThinking || cleanText === lastProcessedSpeechRef.current) return;
     
-    // Avoid processing the same text twice
-    if (text.trim() === lastProcessedSpeechRef.current) return;
-    lastProcessedSpeechRef.current = text.trim();
+    lastProcessedSpeechRef.current = cleanText;
+    
+    // Clear transcript ref and UI
+    transcriptRef.current = '';
+    setTranscript('');
 
     // Clear any pending silence timer
     if (silenceTimerRef.current) {
@@ -390,7 +419,7 @@ export default function LiveMeetingFlow({
             {/* User Label */}
             <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 flex items-center gap-1.5 md:gap-2 bg-black/40 backdrop-blur-md px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/10">
                <span className="text-[10px] md:text-xs font-bold">{user.displayName ? user.displayName.split(' ')[0] : 'Anda'} (You)</span>
-               {!isMicOn && <MicOff size={12} md:size={14} className="text-rose-400" />}
+               {!isMicOn && <MicOff size={14} className="text-rose-400" />}
             </div>
 
             {/* Transcript Overlay - Moved to bottom right like a notification */}
@@ -533,11 +562,11 @@ function MeetingTile({
       <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 flex items-center gap-1.5 md:gap-2 bg-black/40 backdrop-blur-md px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/10">
          {isActive ? (
            <div className="p-0.5 md:p-1 bg-emerald-500 rounded-md">
-             <Volume2 size={10} md:size={12} className="text-white" />
+             <Volume2 size={12} className="text-white" />
            </div>
          ) : (
            <div className="p-0.5 md:p-1 bg-slate-600 rounded-md">
-             <VolumeX size={10} md:size={12} className="text-slate-400" />
+             <VolumeX size={12} className="text-slate-400" />
            </div>
          )}
          <span className="text-[10px] md:text-xs font-bold">{label}</span>
