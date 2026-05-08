@@ -1,0 +1,227 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+import React, { useState, useEffect } from 'react';
+import { db, auth } from '../lib/firebase';
+import { collection, query, where, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { Simulation, SimulationType, SimulationStatus } from '../types';
+import { 
+  History, Calendar, GraduationCap, Briefcase, 
+  Trash2, ArrowLeft, Loader2, Zap, Bot
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { cn } from '../lib/utils';
+
+interface HistoryPageProps {
+  onBack: () => void;
+}
+
+// Konfigurasi animasi bouncy
+const SPRING_BOUNCY = { type: 'spring', damping: 15, stiffness: 250 } as const;
+
+export default function HistoryPage({ onBack }: HistoryPageProps) {
+  const [simulations, setSimulations] = useState<Simulation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const user = auth.currentUser;
+
+  useEffect(() => {
+    if (user) {
+      fetchHistory();
+    }
+  }, [user]);
+
+  const fetchHistory = async () => {
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, 'simulations'),
+        where('userId', '==', user?.uid),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const sims: Simulation[] = [];
+      querySnapshot.forEach((doc) => {
+        sims.push({ id: doc.id, ...doc.data() } as Simulation);
+      });
+      setSimulations(sims);
+    } catch (err) {
+      console.error("Fetch history failed", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (deleteId: string) => {
+    if (window.confirm("Yakin mau hapus riwayat latihan ini? Sayang lho! 🥺")) {
+      try {
+        await deleteDoc(doc(db, 'simulations', deleteId));
+        fetchHistory();
+      } catch (err) {
+        console.error("Delete failed", err);
+      }
+    }
+  };
+
+  // --- Loading State ---
+  if (loading) {
+    return (
+      <div className="py-32 flex flex-col items-center justify-center gap-5">
+        <div className="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center border-4 border-sky-200">
+          <Loader2 className="w-8 h-8 animate-spin text-sky-500" strokeWidth={3} />
+        </div>
+        <p className="text-slate-500 font-bold text-base">Bongkar laci memori dulu...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 py-8 px-4">
+      
+      {/* ── Header Card ── */}
+      <div className="flex items-center gap-5 bg-sky-50 p-6 md:p-8 rounded-[2.5rem] border-[4px] border-sky-200 relative overflow-hidden">
+        {/* Dekorasi Background */}
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-sky-200/50 rounded-full blur-2xl pointer-events-none" />
+        
+        <button 
+          onClick={onBack}
+          className="w-14 h-14 flex-shrink-0 flex items-center justify-center bg-white hover:bg-slate-50 text-sky-600 rounded-2xl border-[3px] border-sky-200 transition-all shadow-[0_4px_0_0_rgba(186,230,253,1)] hover:translate-y-1 hover:shadow-none"
+        >
+          <ArrowLeft size={24} strokeWidth={3} />
+        </button>
+        <div className="z-10">
+          <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-none mb-1">
+            Riwayat Santuy
+          </h2>
+          <p className="text-slate-500 font-bold text-sm md:text-base">
+            Pantau seberapa tebal mental bajamu di sini.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Empty State ── */}
+      {simulations.length === 0 ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white border-[4px] border-dashed border-slate-200 rounded-[3rem] p-16 text-center flex flex-col items-center justify-center gap-6"
+        >
+          <div className="w-24 h-24 bg-slate-100 rounded-[2rem] flex items-center justify-center text-slate-400 border-[3px] border-slate-200">
+            <Bot size={48} strokeWidth={2.5} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-black text-2xl text-slate-700">Yah, riwayatnya masih kosong!</h3>
+            <p className="text-base font-bold text-slate-400 max-w-md mx-auto">
+              Belum ada simulasi yang tersimpan. Yuk, mulai latihan pertamamu dan kumpulin skor terbaik!
+            </p>
+          </div>
+          <button 
+            onClick={onBack}
+            className="mt-4 bg-emerald-400 text-white px-8 py-4 rounded-2xl font-black text-lg border-[3px] border-emerald-500 shadow-[0_6px_0_0_rgba(16,185,129,1)] hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
+          >
+            Mulai Simulasi <Zap size={20} className="fill-current" />
+          </button>
+        </motion.div>
+
+      ) : (
+        
+        /* ── History List ── */
+        <div className="grid gap-5">
+          {simulations.map((sim, idx) => {
+            const isSidang = sim.type === SimulationType.SIDANG;
+            
+            // Konfigurasi Warna berdasarkan Tipe
+            const theme = isSidang ? {
+              bg: 'bg-emerald-50',
+              border: 'border-emerald-200',
+              hoverBorder: 'hover:border-emerald-300',
+              shadow: 'hover:shadow-[0_6px_0_0_rgba(167,243,208,1)]',
+              iconBg: 'bg-emerald-400',
+              text: 'text-emerald-700',
+              pillBg: 'bg-emerald-200',
+              Icon: GraduationCap
+            } : {
+              bg: 'bg-rose-50',
+              border: 'border-rose-200',
+              hoverBorder: 'hover:border-rose-300',
+              shadow: 'hover:shadow-[0_6px_0_0_rgba(254,205,211,1)]',
+              iconBg: 'bg-rose-400',
+              text: 'text-rose-700',
+              pillBg: 'bg-rose-200',
+              Icon: Briefcase
+            };
+
+            return (
+              <motion.div
+                key={sim.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05, ...SPRING_BOUNCY }}
+                className={cn(
+                  "bg-white rounded-[2rem] border-[4px] p-5 sm:p-6 transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 group cursor-default",
+                  theme.border, theme.hoverBorder, theme.shadow
+                )}
+              >
+                <div className="flex items-center gap-5 w-full sm:w-auto">
+                  {/* Icon Card */}
+                  <div className={cn(
+                    "w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-[1.5rem] flex items-center justify-center text-white border-[3px] border-white shadow-sm transform -rotate-2 group-hover:rotate-0 transition-transform",
+                    theme.iconBg
+                  )}>
+                    <theme.Icon size={32} strokeWidth={2.5} />
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h4 className="font-black text-slate-800 text-lg sm:text-xl tracking-tight line-clamp-1">
+                        {sim.title}
+                      </h4>
+                      {sim.status === SimulationStatus.COMPLETED && (
+                        <span className={cn(
+                          "text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border-2 border-white",
+                          theme.pillBg, theme.text
+                        )}>
+                          Selesai
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-4">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                        <Calendar size={14} strokeWidth={2.5} />
+                        {sim.createdAt?.toDate ? format(sim.createdAt.toDate(), 'dd MMM yyyy, HH:mm', { locale: id }) : 'Waktu tidak tersedia'}
+                      </span>
+                      
+                      {sim.finalScore && (
+                        <span className={cn(
+                          "flex items-center gap-1.5 text-sm font-black px-3 py-1 rounded-xl bg-amber-100 text-amber-600 border-2 border-amber-200"
+                        )}>
+                          <Zap size={14} className="fill-current" />
+                          Skor: {sim.finalScore}/100
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end w-full sm:w-auto mt-2 sm:mt-0 pt-4 sm:pt-0 border-t-2 border-slate-100 sm:border-t-0">
+                  <button 
+                    onClick={() => handleDelete(sim.id!)}
+                    className="w-12 h-12 bg-white text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl border-[3px] border-slate-100 hover:border-red-200 transition-all flex items-center justify-center hover:shadow-[0_4px_0_0_rgba(254,205,211,1)] hover:-translate-y-1"
+                    title="Hapus Riwayat"
+                  >
+                    <Trash2 size={20} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

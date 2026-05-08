@@ -1,0 +1,6 @@
+{
+  "name": "Siap Tampil",
+  "description": "Pelatih simulasi bertenaga AI untuk mahasiswa dan lulusan baru di Indonesia. Siapkan diri Anda untuk simulasi sidang skripsi dan interview kerja dengan umpan balik real-time.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}

@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Security Rules for Users collection
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.email is string && data.email.size() <= 256
+               && (!('displayName' in data) || data.displayName == null || data.displayName is string)
+               && (!('photoURL' in data) || data.photoURL == null || data.photoURL is string)
+               && data.createdAt is timestamp;
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) 
+                      && incoming().email == existing().email 
+                      && incoming().createdAt == existing().createdAt;
+    }
+
+    // Security Rules for Simulations collection
+    match /simulations/{simulationId} {
+      function isValidSimulation(data) {
+        return isValidId(data.userId) 
+               && data.userId == request.auth.uid
+               && (data.type == 'sidang' || data.type == 'interview' || data.type == 'meeting_sidang' || data.type == 'meeting_interview')
+               && (data.status == 'ongoing' || data.status == 'completed')
+               && data.createdAt is timestamp
+               && (!('title' in data) || (data.title is string && data.title.size() <= 512))
+               && (!('documentText' in data) || (data.documentText is string && data.documentText.size() <= 500000))
+               && (!('jobDescription' in data) || (data.jobDescription is string && data.jobDescription.size() <= 10000))
+               && (!('finalScore' in data) || (data.finalScore is number))
+               && (!('hiringLikelihood' in data) || (data.hiringLikelihood is number))
+               && (!('unresolvedPoints' in data) || (data.unresolvedPoints is list))
+               && (!('improvementTips' in data) || (data.improvementTips is string))
+               && (!('questions' in data) || (data.questions is list));
+      }
+
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidSimulation(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidSimulation(incoming())
+                      && incoming().userId == existing().userId
+                      && incoming().type == existing().type
+                      && incoming().createdAt == existing().createdAt
+                      && (existing().status == 'ongoing' || (incoming().status == existing().status && incoming().diff(existing()).affectedKeys().size() == 0));
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Allow testing connection
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

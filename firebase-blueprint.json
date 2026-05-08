@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Simulation": {
+      "title": "Simulation",
+      "description": "A coaching session simulation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["sidang", "interview", "meeting_sidang", "meeting_interview"] },
+        "title": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "documentText": { "type": "string" },
+        "jobDescription": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "answer": { "type": "string" },
+              "feedback": { "type": "string" },
+              "score": { "type": "number" },
+              "suggestedAnswer": { "type": "string" },
+              "starFeedback": {
+                "type": "object",
+                "properties": {
+                  "situation": { "type": "string" },
+                  "task": { "type": "string" },
+                  "action": { "type": "string" },
+                  "result": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "finalScore": { "type": "number" },
+        "improvementTips": { "type": "string" },
+        "hiringLikelihood": { "type": "number" },
+        "unresolvedPoints": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["ongoing", "completed"] }
+      },
+      "required": ["userId", "type", "createdAt", "status"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles"
+    },
+    "simulations/{simulationId}": {
+      "schema": "Simulation",
+      "description": "Stores simulation sessions"
+    }
+  }
+}
