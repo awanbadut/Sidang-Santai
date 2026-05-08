@@ -28,6 +28,7 @@ export default function LiveMeetingFlow({
   mode, docText, jd, user, onFinish, onCancel 
 }: LiveMeetingFlowProps) {
   const [isMicOn, setIsMicOn] = useState(false);
+  const isMicOnRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [conversation, setConversation] = useState<QuestionEntry[]>([]);
@@ -41,6 +42,18 @@ export default function LiveMeetingFlow({
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(window.speechSynthesis);
   const conversationRef = useRef<QuestionEntry[]>([]);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const prodTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastProcessedSpeechRef = useRef<string>('');
+
+  const startProdTimer = () => {
+    if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
+    prodTimerRef.current = setTimeout(() => {
+      if (!isAiSpeakingRef.current && !isAThinking && isMicOn) {
+        handleUserSpeech("(User terdiam/masih bingung)");
+      }
+    }, 12000); // 12 seconds of silence -> AI prods
+  };
 
   // ── Timer Effect ──
   useEffect(() => {
@@ -69,37 +82,65 @@ export default function LiveMeetingFlow({
 
       recognition.onresult = (event: any) => {
         let interimTranscript = '';
-        let finalTranscript = '';
-
-        // If AI is speaking, ignore mic input (feedback guard)
-        if (isAiSpeakingRef.current) return;
-
-        // If user is speaking, STOP AI speech (interruption)
-        if (synthRef.current?.speaking) {
-          synthRef.current.cancel();
-          setActiveSpeakers([]);
-          setAiCaptions('');
-        }
+        let currentFinalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            currentFinalTranscript += event.results[i][0].transcript;
           } else {
             interimTranscript += event.results[i][0].transcript;
           }
         }
 
-        setTranscript(finalTranscript || interimTranscript);
+        const fullText = interimTranscript || currentFinalTranscript;
+        if (!fullText.trim()) return;
+
+        // If user is speaking, STOP AI speech (interruption)
+        // We do this BEFORE the feedback guard to allow real humans to cut off the AI
+        if (synthRef.current?.speaking) {
+          // Only cancel if the speech is long enough to be a real interruption,
+          // avoiding false positives from background noise.
+          if (fullText.length > 5) {
+            synthRef.current.cancel();
+            setActiveSpeakers([]);
+            setAiCaptions('');
+            isAiSpeakingRef.current = false;
+            if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
+          }
+        }
+
+        // If AI is speaking and we didn't interrupt it, ignore mic input (feedback guard)
+        if (isAiSpeakingRef.current) return;
+
+        setTranscript(fullText);
         
-        // Logic to detect silence and submit
-        if (finalTranscript) {
-          handleUserSpeech(finalTranscript);
+        // Reset silence timer on every result
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        
+        // If we have some significant text, start a timer to auto-submit after pause
+        if (fullText.length > 1) {
+          if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
+          silenceTimerRef.current = setTimeout(() => {
+            handleUserSpeech(fullText);
+          }, 1800); // slightly faster turn response
         }
       };
 
       recognition.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
         setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        // Auto restart if mic is supposed to be on
+        if (isMicOnRef.current) {
+          try {
+            recognitionRef.current?.start();
+          } catch (e) {
+            console.warn("Recognition restart failed", e);
+          }
+        }
       };
 
       recognitionRef.current = recognition;
@@ -117,7 +158,8 @@ export default function LiveMeetingFlow({
     const startMeeting = async () => {
       setIsAThinking(true);
       try {
-        const firstTurn = await getNextTurnMeeting(mode, docText, [], 'metod', jd);
+        const initialPanelist = mode.includes('interview') ? 'shinta' : 'metod';
+        const firstTurn = await getNextTurnMeeting(mode, docText, [], initialPanelist, jd);
         playAIScript(firstTurn.script, firstTurn);
       } catch (err) {
         console.error("Failed to start meeting", err);
@@ -129,18 +171,34 @@ export default function LiveMeetingFlow({
   }, []);
 
   const toggleMic = () => {
-    if (isMicOn) {
+    const newState = !isMicOn;
+    setIsMicOn(newState);
+    isMicOnRef.current = newState;
+
+    if (!newState) {
       recognitionRef.current?.stop();
       setIsListening(false);
+      if (prodTimerRef.current) clearTimeout(prodTimerRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     } else {
       recognitionRef.current?.start();
       setIsListening(true);
+      startProdTimer();
     }
-    setIsMicOn(!isMicOn);
   };
 
   const handleUserSpeech = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isAThinking) return;
+    
+    // Avoid processing the same text twice
+    if (text.trim() === lastProcessedSpeechRef.current) return;
+    lastProcessedSpeechRef.current = text.trim();
+
+    // Clear any pending silence timer
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
     
     // Create history entry
     const lastAI = conversationRef.current[conversationRef.current.length - 1];
@@ -239,6 +297,7 @@ export default function LiveMeetingFlow({
           if (index + 1 >= parts.length) {
             isAiSpeakingRef.current = false;
             setAiCaptions('');
+            startProdTimer(); // Start prodding timer when AI finishes speaking
           }
           playSequentially(index + 1);
         };

@@ -173,6 +173,12 @@ ${historyPrompt || 'MULAI SESI.'}
 USER JUST SAID: "${userSpeech || 'Belum ada input'}"
 
 TUGAS: Berikan respon LIVE MEETING. Gunakan fillers dan interupsi.
+Jika user terdiam lama (ditandai dengan input "(User terdiam/masih bingung)"), jangan membisu. Ambil inisiatif untuk:
+1. Menanyakan apakah mereka mengerti pertanyaannya.
+2. Memberikan sedikit petunjuk atau konteks tambahan.
+3. Mencoba memancing dengan pertanyaan yang lebih sederhana namun tetap tajam.
+4. Jangan hanya "Halo?", tapi tetap dalam peran panelis yang kritis atau HR yang ingin tahu.
+
 Gunakan salah satu dari panelis berikut: ${allowedPanelists.join(', ')}.
 Hasilkan JSON.`;
 
