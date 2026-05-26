@@ -53,59 +53,59 @@ const staggerContainer = {
 
 // ─── Data (Dirombak dengan Copywriting Santai & Gemas) ──────────────────────
 const STATS = [
-  { num: '2.4rb+', label: 'Mahasiswa Santuy' },
-  { num: '98%', label: 'Lulus Tanpa Panik' },
-  { num: '15rb+', label: 'Sesi Latihan' },
+  { num: '2.4rb+', label: 'Mahasiswa Santuy 🧸' },
+  { num: '98%', label: 'Lulus dengan Ceria 🌸' },
+  { num: '15rb+', label: 'Sesi Latihan Cute 🍭' },
 ];
 
 const STEPS = [
   {
     num: '01',
-    title: 'Pilih Vibe Kamu',
-    desc: 'Mau latihan Sidang TA atau Interview Kerja? Pilih medan tempurmu hari ini.',
+    title: 'Pilih Mode Latihanmu 🎀',
+    desc: 'Mau main peran Sidang TA yang seru atau Interview Kerja? Pilih petualanganmu hari ini!',
   },
   {
     num: '02',
-    title: 'Bawa Senjatamu (Upload File)',
-    desc: 'Taruh draf skripsi (PDF) atau CV kamu di sini biar VibeBot bisa pelajari.',
+    title: 'Kirim Draf / CV Kamu 📄',
+    desc: 'Taruh draf skripsi (PDF) atau CV kamu di sini agar penguji imut bisa mempelajari topikmu.',
   },
   {
     num: '03',
-    title: 'Mulai Ngobrol & Debat!',
-    desc: 'Jawab pertanyaan via suara atau teks. Hadapi dosen galak versi AI tanpa keringat dingin.',
+    title: 'Ayo Mulai Mengobrol! 💬',
+    desc: 'Jawab pertanyaan melalui suara atau ketikan santai. Hadapi dosen galak dengan tenang dan ceria!',
   },
 ];
 
 const BENEFITS = [
   {
-    icon: Bot,
-    title: 'VibeBot Super Pintar',
-    desc: 'Bukan AI biasa. VibeBot baca PDF TA-mu dan bakal nanya dari celah dokumenmu yang paling lemah.',
+    icon: Smile,
+    title: 'Penguji Sangat Pintar 🧸',
+    desc: 'Bukan sekadar sistem biasa. Penguji kami membaca PDF TA-mu dan menanyakan poin penting secara cerdas.',
   },
   {
     icon: CheckCircle2,
-    title: 'Ruang Aman Anti-Insecure',
-    desc: 'Latihan sampai berbusa. Gak ada yang bakal nge-judge kamu di sini. Privasi 100% aman.',
-  },
-  {
-    icon: Zap,
-    title: 'Teman Begadang 24/7',
-    desc: 'Besok pagi sidang? Tenang, VibeBot siap nemenin kamu simulasi jam 3 pagi sekalipun.',
-  },
-  {
-    icon: BarChart2,
-    title: 'Rapor Jujur tapi Gemas',
-    desc: 'Dapat skor dari 1-100 plus feedback spesifik buat naikin kualitas jawabanmu.',
-  },
-  {
-    icon: Users,
-    title: '"Avengers" Kampus',
-    desc: 'Berhadapan langsung sama 3 karakter penguji: Si Galak, Si Teliti, dan Si Praktisi.',
+    title: 'Ruang Nyaman & Tenang 🌸',
+    desc: 'Bebas latihan berulang-ulang tanpa rasa takut atau insecure. Semua latihanmu bersifat privat.',
   },
   {
     icon: Coffee,
-    title: 'Gratis Buat Anak Kampus',
-    desc: 'Tinggal login, gak perlu kartu kredit. Kita tau dompet mahasiswa kayak gimana.',
+    title: 'Teman Belajar 24/7 🍰',
+    desc: 'Besok pagi jadwal presentasi? Tenang, penguji imut siap menemanimu simulasi kapan saja kamu butuh.',
+  },
+  {
+    icon: BarChart2,
+    title: 'Rapor Evaluasi yang Informatif 📊',
+    desc: 'Dapatkan skor penilaian beserta masukan spesifik untuk meningkatkan kualitas jawabanmu.',
+  },
+  {
+    icon: Users,
+    title: 'Karakter Penguji Unik 🐱',
+    desc: 'Berinteraksi langsung dengan 3 karakter penguji: Dr. Metod, Pak Aris, dan Bu Ima.',
+  },
+  {
+    icon: Star,
+    title: 'Gratis Selamanya 🍭',
+    desc: 'Tinggal masuk menggunakan akun Google Anda dan mulai berlatih tanpa ribet.',
   },
 ];
 
@@ -241,7 +241,7 @@ function ModeCard({
       )}
     >
       {/* ── Card header (Pastel Fill) ── */}
-      <div className={cn('relative p-8 rounded-t-[2.2rem] border-b-[4px]', accent.bg, accent.border)}>
+      <div className={cn('relative p-6 md:p-8 rounded-t-[2.2rem] border-b-[4px]', accent.bg, accent.border)}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-3">
             <span className={cn('inline-flex w-max items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full', accent.tagBg, accent.tagText)}>
@@ -268,7 +268,7 @@ function ModeCard({
       </div>
 
       {/* ── Feature list ── */}
-      <div className="px-8 py-6 flex-1">
+      <div className="px-6 py-4 md:px-8 md:py-6 flex-1">
         <ul className="flex flex-col gap-3.5">
           {features.map(({ icon: Icon, label }, i) => (
             <li key={i} className="flex items-center gap-3 text-sm text-slate-600 font-bold">
@@ -282,7 +282,7 @@ function ModeCard({
       </div>
 
       {/* ── Card footer ── */}
-      <div className="px-8 pb-8 pt-2 flex items-center gap-4">
+      <div className="px-6 pb-6 pt-2 md:px-8 md:pb-8 flex items-center gap-4">
         <button
           className={cn(
             'flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-black text-white text-base',
@@ -311,7 +311,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] font-sans overflow-x-hidden text-slate-700">
+    <div className="min-h-screen bg-transparent font-sans overflow-x-hidden text-slate-700">
       
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative pt-16 pb-12 px-4 md:px-8 text-center overflow-hidden">
@@ -323,8 +323,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         >
           {/* Badge Gemas */}
           <motion.div variants={fadeUp} className="mb-6">
-            <span className="inline-flex items-center gap-2 text-sm font-bold text-sky-600 bg-sky-100 border-2 border-sky-200 px-4 py-2 rounded-full shadow-sm">
-              <Bot size={16} className="text-sky-500" /> VibeBot Siap Membantu!
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-purple-600 bg-purple-50 border-2 border-purple-200 px-4 py-2 rounded-full shadow-sm">
+              <Smile size={16} className="text-purple-500 animate-pulse" /> Teman Ujian Siap Menemanimu! 🧸
             </span>
           </motion.div>
 
@@ -333,26 +333,26 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-slate-800 leading-[1.1] mb-4 md:mb-6"
           >
             Tegang di Simulasi, <br />
-            <span className="text-emerald-500 inline-block transform -rotate-1">Santai</span>{' '}
+            <span className="text-pink-500 inline-block transform -rotate-1">Santai</span>{' '}
             <span className="text-slate-400">di</span>{' '}
-            <span className="text-rose-400 inline-block transform rotate-1">Eksekusi.</span>
+            <span className="text-sky-400 inline-block transform rotate-1">Eksekusi. 🧸</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="text-base md:text-xl text-slate-500 font-medium max-w-2xl mx-auto mb-8 md:mb-10 leading-relaxed px-4 md:px-0"
           >
-            Upload PDF TA atau CV kamu. Biar AI kami yang jadi 'dosen galak' atau 'HRD kritis' buat melatih mentalmu sampai berani tampil.
+            Upload PDF TA atau CV kamu. Biar para penguji kami bermain peran sebagai 'dosen galak' atau 'HRD kritis' buat melatih mentalmu sampai berani tampil dengan asyik!
           </motion.p>
 
           {/* Stats row */}
           <motion.div
             variants={fadeUp}
-            className="flex flex-wrap items-center justify-center gap-6 md:gap-12 bg-white border-[3px] border-slate-100 p-6 rounded-[2rem] shadow-sm"
+            className="flex flex-wrap items-center justify-center gap-6 md:gap-12 bg-white border-[3px] border-purple-100 p-6 rounded-[2rem] shadow-sm"
           >
             {STATS.map((s, i) => (
               <React.Fragment key={s.num}>
-                {i > 0 && <span className="hidden md:block w-1.5 h-1.5 rounded-full bg-slate-200" />}
+                {i > 0 && <span className="hidden md:block w-1.5 h-1.5 rounded-full bg-purple-100" />}
                 <StatItem {...s} />
               </React.Fragment>
             ))}
@@ -373,25 +373,25 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             type="sidang"
             title="Sidang Santai"
             tagline="Mode Chat Mahasiswa"
-            description="Latih argumen bab per bab. Hadapi 3 dosen penguji AI via chat!"
+            description="Latih argumen bab per bab. Hadapi 3 dosen penguji imut via chat!"
             features={[
-              { icon: MessageSquare, label: 'Text-Based Interaction' },
-              { icon: Upload, label: 'Upload Draf TA (PDF)' },
-              { icon: Users, label: 'Panel 3 Penguji Multikarakter' },
-              { icon: Sparkles, label: 'Dynamic Interrogation' },
+              { icon: MessageSquare, label: 'Interaksi Berbasis Teks 💬' },
+              { icon: Upload, label: 'Upload Draf TA (PDF) 📄' },
+              { icon: Users, label: 'Tiga Penguji Karakter Berbeda 🐱' },
+              { icon: Sparkles, label: 'Tanya-Jawab Interaktif ✨' },
             ]}
-            ctaText="Mulai Chat!"
+            ctaText="Mulai Chat! 🌸"
             difficulty={{ icon: Flame, label: 'Deg-degan Maksimal' }}
             accent={{
-              bg: 'bg-emerald-50',
-              border: 'border-emerald-200',
-              shadow: 'shadow-[0_12px_0_0_rgba(167,243,208,1)] -translate-y-2',
-              iconBg: 'bg-emerald-400',
-              tagBg: 'bg-emerald-200/50',
-              tagText: 'text-emerald-700',
+              bg: 'bg-pink-50/50',
+              border: 'border-pink-200',
+              shadow: 'shadow-[0_12px_0_0_#ffccd5] -translate-y-2',
+              iconBg: 'bg-pink-400',
+              tagBg: 'bg-pink-100',
+              tagText: 'text-pink-700',
               tagIcon: GraduationCap,
-              cta: 'bg-emerald-400 hover:bg-emerald-500',
-              ctaShadow: 'shadow-[0_6px_0_0_rgba(52,211,153,1)]',
+              cta: 'bg-pink-400 hover:bg-pink-500',
+              ctaShadow: 'shadow-[0_6px_0_0_#ff4d6d]',
             }}
             MainIcon={GraduationCap}
             onClick={() => onStart(SimulationType.SIDANG)}
@@ -401,25 +401,25 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             type="interview"
             title="Interview Santuy"
             tagline="Mode Chat Job Seeker"
-            description="Upload CV & Job Desc. Latihan chat sama AI HRD biar gampang dapet offering."
+            description="Upload CV & Job Desc. Latihan simulasi interview kerja agar lancar dapat offering!"
             features={[
-              { icon: MessageSquare, label: 'Text-Based Interaction' },
-              { icon: FileText, label: 'Upload CV & Job Desc' },
-              { icon: UserCheck, label: 'Simulasi Perilaku' },
-              { icon: Smile, label: 'Umpan Balik Kesiapan' },
+              { icon: MessageSquare, label: 'Interaksi Berbasis Teks 💬' },
+              { icon: FileText, label: 'Upload CV & Job Desc 📄' },
+              { icon: UserCheck, label: 'Simulasi Perilaku Profesional 👔' },
+              { icon: Smile, label: 'Umpan Balik Kesiapan 🍭' },
             ]}
-            ctaText="Mulai Chat!"
+            ctaText="Mulai Chat! 🍰"
             difficulty={{ icon: Target, label: 'Asah Skill Ngomong' }}
             accent={{
-              bg: 'bg-rose-50',
-              border: 'border-rose-200',
-              shadow: 'shadow-[0_12px_0_0_rgba(254,205,211,1)] -translate-y-2',
-              iconBg: 'bg-rose-400',
-              tagBg: 'bg-rose-200/50',
-              tagText: 'text-rose-700',
+              bg: 'bg-amber-50/70',
+              border: 'border-amber-200',
+              shadow: 'shadow-[0_12px_0_0_#fde047] -translate-y-2',
+              iconBg: 'bg-amber-400',
+              tagBg: 'bg-amber-100',
+              tagText: 'text-amber-800',
               tagIcon: Briefcase,
-              cta: 'bg-rose-400 hover:bg-rose-500',
-              ctaShadow: 'shadow-[0_6px_0_0_rgba(251,113,133,1)]',
+              cta: 'bg-amber-400 hover:bg-amber-500',
+              ctaShadow: 'shadow-[0_6px_0_0_#d97706]',
             }}
             MainIcon={Briefcase}
             onClick={() => onStart(SimulationType.INTERVIEW)}
@@ -429,25 +429,25 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             type="sidang"
             title="Live Call Sidang"
             tagline="BARU! Mode Voice Call"
-            description="Latihan sidang tatap muka via voice call. AI bakal memotong & menyanggah kamu!"
+            description="Latihan sidang tatap muka via panggilan suara langsung dengan interupsi nyata!"
             features={[
-              { icon: Mic, label: 'Voice-First Interaction' },
-              { icon: Zap, label: 'Interupsi & Sanggahan Nyata' },
-              { icon: Users, label: '3 Penguji Saling Timpali' },
-              { icon: Bot, label: 'Vibe Bot Live Performance' },
+              { icon: Mic, label: 'Interaksi Suara Langsung 🎙️' },
+              { icon: Zap, label: 'Interupsi & Sanggahan Realistis ⚡' },
+              { icon: Users, label: 'Dosen Saling Menimpali 👥' },
+              { icon: Sparkles, label: 'Suara Alami Bernada Manusia 🌸' },
             ]}
-            ctaText="Mulai Call!"
+            ctaText="Mulai Call! 🎀"
             difficulty={{ icon: Zap, label: 'Sangat Menantang' }}
             accent={{
-              bg: 'bg-sky-50',
-              border: 'border-sky-300',
-              shadow: 'shadow-[0_12px_0_0_rgba(186,230,253,1)] -translate-y-2',
-              iconBg: 'bg-sky-400',
-              tagBg: 'bg-sky-200/50',
-              tagText: 'text-sky-700',
+              bg: 'bg-purple-50/60',
+              border: 'border-purple-200',
+              shadow: 'shadow-[0_12px_0_0_#e8daff] -translate-y-2',
+              iconBg: 'bg-purple-400',
+              tagBg: 'bg-purple-100',
+              tagText: 'text-purple-700',
               tagIcon: Mic,
-              cta: 'bg-sky-400 hover:bg-sky-500',
-              ctaShadow: 'shadow-[0_6px_0_0_rgba(125,211,252,1)]',
+              cta: 'bg-purple-400 hover:bg-purple-500',
+              ctaShadow: 'shadow-[0_6px_0_0_#a855f7]',
             }}
             MainIcon={Mic}
             onClick={() => onStart(SimulationType.MEETING_SIDANG)}
@@ -457,25 +457,25 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             type="interview"
             title="Live Call Interview"
             tagline="BARU! Mode Voice Call"
-            description="Latihan interview kerja live. Hadapi cecaran HRD dalam percakapan cepat."
+            description="Latihan interview kerja live. Hadapi cecaran HRD dalam percakapan cepat dan santai."
             features={[
-              { icon: Mic, label: 'Voice-First Interaction' },
-              { icon: Target, label: 'Fast-Paced Conversation' },
-              { icon: Briefcase, label: 'Stress Management' },
-              { icon: Star, label: 'STAR Method Live Feedback' },
+              { icon: Mic, label: 'Interaksi Suara Langsung 🎙️' },
+              { icon: Target, label: 'Pertanyaan Terarah & Cepat 🎯' },
+              { icon: Briefcase, label: 'Manajemen Stres Ujian 🧸' },
+              { icon: Star, label: 'Umpan Balik Metode STAR ⭐' },
             ]}
-            ctaText="Mulai Call!"
+            ctaText="Mulai Call! 🍭"
             difficulty={{ icon: Zap, label: 'Sangat Menantang' }}
             accent={{
-              bg: 'bg-indigo-50',
-              border: 'border-indigo-300',
-              shadow: 'shadow-[0_12px_0_0_rgba(199,210,254,1)] -translate-y-2',
-              iconBg: 'bg-indigo-400',
-              tagBg: 'bg-indigo-200/50',
-              tagText: 'text-indigo-700',
+              bg: 'bg-sky-50/60',
+              border: 'border-sky-200',
+              shadow: 'shadow-[0_12px_0_0_#a2d2ff] -translate-y-2',
+              iconBg: 'bg-sky-400',
+              tagBg: 'bg-sky-100',
+              tagText: 'text-sky-700',
               tagIcon: Mic,
-              cta: 'bg-indigo-400 hover:bg-indigo-500',
-              ctaShadow: 'shadow-[0_6px_0_0_rgba(129,140,248,1)]',
+              cta: 'bg-sky-400 hover:bg-sky-500',
+              ctaShadow: 'shadow-[0_6px_0_0_#0ea5e9]',
             }}
             MainIcon={Mic}
             onClick={() => onStart(SimulationType.MEETING_INTERVIEW)}
@@ -485,14 +485,14 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       </section>
 
       {/* ── How It Works ──────────────────────────────────────────────── */}
-      <section className="bg-white border-y-[4px] border-slate-100 py-16 md:py-24 px-4 md:px-8">
+      <section className="bg-white border-y-[4px] border-purple-100/70 py-16 md:py-24 px-4 md:px-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 text-sm font-bold text-sky-500 uppercase tracking-widest mb-4">
-              <ChevronRight size={16} strokeWidth={3} /> Flow Paling Gampang
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-purple-500 uppercase tracking-widest mb-4">
+              <ChevronRight size={16} strokeWidth={3} /> Flow Paling Mudah 🧸
             </span>
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-800 mb-6 leading-tight">
-              Tiga Langkah Menuju <br /> Mental Baja
+              Tiga Langkah Mudah <br /> Menuju Mental Juara 🧸
             </h2>
             <ol className="flex flex-col gap-4">
               {STEPS.map((step, i) => (
@@ -512,24 +512,24 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={SPRING_BOUNCY}
-            className="order-first md:order-last bg-sky-100 rounded-[2.5rem] border-[4px] border-sky-200 p-8 flex items-center justify-center min-h-[350px]"
+            className="bg-[linear-gradient(135deg,_rgba(255,204,213,0.3)_0%,_rgba(243,229,245,0.3)_35%,_rgba(224,242,254,0.3)_70%,_rgba(230,252,245,0.3)_100%)] rounded-[2.5rem] border-[4px] border-purple-200/50 p-6 md:p-8 flex items-center justify-center min-h-[350px]"
           >
             {/* Ilustrasi UI Mockup yg Gemas */}
-            <div className="bg-white w-full max-w-sm rounded-3xl border-[4px] border-slate-100 shadow-xl overflow-hidden flex flex-col">
-              <div className="bg-slate-50 border-b-[3px] border-slate-100 p-4 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-400" />
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
-                <div className="w-3 h-3 rounded-full bg-emerald-400" />
+            <div className="bg-white w-full max-w-sm rounded-3xl border-[4px] border-purple-100/60 shadow-xl overflow-hidden flex flex-col">
+              <div className="bg-gradient-to-r from-pink-50/50 to-sky-50/50 border-b-[3px] border-purple-100/60 p-4 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-400 animate-pulse" />
+                <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
+                <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
               </div>
               <div className="p-6 flex flex-col gap-4 items-center">
-                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-500 mb-2">
-                  <Bot size={40} strokeWidth={2} />
+                <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-sky-100 rounded-full flex items-center justify-center text-purple-500 mb-2">
+                  <Smile size={40} strokeWidth={2} />
                 </div>
-                <div className="w-3/4 h-4 bg-slate-200 rounded-full" />
-                <div className="w-1/2 h-4 bg-slate-100 rounded-full" />
+                <div className="w-3/4 h-4 bg-purple-50/70 rounded-full animate-pulse" />
+                <div className="w-1/2 h-4 bg-purple-50/50 rounded-full animate-pulse" />
                 <div className="w-full mt-4 flex gap-2">
-                  <div className="flex-1 h-12 bg-sky-100 rounded-2xl" />
-                  <div className="w-12 h-12 bg-rose-400 rounded-2xl flex items-center justify-center text-white">
+                  <div className="flex-1 h-12 bg-purple-50/50 rounded-2xl" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-sky-400 rounded-2xl flex items-center justify-center text-white border-[2px] border-purple-300">
                     <Mic size={20} />
                   </div>
                 </div>
@@ -543,11 +543,11 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       <section className="py-16 md:py-24 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 text-sm font-bold text-amber-500 uppercase tracking-widest mb-4">
-              <Sparkles size={16} /> Kenapa Pake Ini?
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-purple-500 uppercase tracking-widest mb-4">
+              <Sparkles size={16} /> Kenapa Pakai Ini? 🧸
             </span>
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-800">
-              Biar Nggak Keringet Dingin Lagi
+              Biar Nggak Keringat Dingin Lagi 🍰
             </h2>
           </div>
           <motion.div
@@ -564,27 +564,27 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
-      {/* ── CTA Banner ────────────────────────────────────────────────── */}
+      {/* ── CTA Banner ── (Uses slanted gender-gradient) */}
       <section className="px-4 md:px-8 pb-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-7xl mx-auto bg-gradient-to-br from-sky-300 via-indigo-300 to-rose-300 rounded-[2rem] md:rounded-[3rem] border-[4px] md:border-[6px] border-white shadow-xl overflow-hidden p-8 md:p-20 text-center relative"
+          className="max-w-7xl mx-auto bg-[linear-gradient(135deg,_#fbcfe8_0%,_#e9d5ff_35%,_#bae6fd_70%,_#c6f6d5_100%)] rounded-[2rem] md:rounded-[3rem] border-[4px] md:border-[6px] border-white shadow-xl overflow-hidden p-8 md:p-20 text-center relative"
         >
           <div className="relative z-10">
-            <h2 className="text-2xl md:text-5xl font-black tracking-tight text-indigo-950 mb-6 leading-tight">
-              Waktunya Bersinar <br /> di Hari H!
+            <h2 className="text-2xl md:text-5xl font-black tracking-tight text-purple-950 mb-6 leading-tight">
+              Waktunya Bersinar <br /> di Hari H! 🎓
             </h2>
-            <p className="text-lg text-indigo-900/80 font-bold max-w-lg mx-auto mb-10">
-              Gabung sama VibeBot dan ribuan mahasiswa lainnya yang udah ngebuktiin gampangnya naklukin penguji.
+            <p className="text-lg text-purple-900/80 font-bold max-w-lg mx-auto mb-10">
+              Gabung bersama kami dan ribuan mahasiswa lainnya yang sudah membuktikan mudahnya melatih mental presentasi!
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <button
                 onClick={() => onStart(SimulationType.SIDANG)}
-                className="bg-white text-indigo-600 font-black text-lg px-8 py-4 rounded-2xl shadow-[0_6px_0_0_rgba(203,213,225,1)] hover:translate-y-1 hover:shadow-[0_2px_0_0_rgba(203,213,225,1)] transition-all flex items-center gap-3"
+                className="bg-white text-purple-600 font-black text-lg px-8 py-4 rounded-2xl shadow-[0_6px_0_0_#e8daff] hover:translate-y-1 hover:shadow-[0_2px_0_0_#e8daff] transition-all flex items-center gap-3"
               >
-                <GraduationCap size={20} strokeWidth={3} /> Gas Sidang!
+                <GraduationCap size={20} strokeWidth={3} /> Gas Latihan! 🧸
               </button>
             </div>
           </div>

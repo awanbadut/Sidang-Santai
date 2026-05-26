@@ -32,6 +32,7 @@ export interface QuestionEntry {
   suggestedAnswer: string;
   panelistId: PanelistId;
   starFeedback?: StarFeedback;
+  isFollowUp?: boolean;
 }
 
 export interface Simulation {
@@ -46,6 +47,8 @@ export interface Simulation {
   finalScore?: number;
   improvementTips?: string;
   hiringLikelihood?: number;
+  unresolvedPoints?: string[];
+  vibe?: 'standard' | 'killer' | 'santai' | 'gokil';
   status: SimulationStatus;
 }
 

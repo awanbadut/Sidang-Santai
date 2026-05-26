@@ -1,8 +1,13 @@
-import { GoogleGenAI, Type } from "@google/genai";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { SimulationType, StarFeedback } from "../types";
+import { generateWithStrategy } from "./gemini-pool";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-
+// ─────────────────────────────────────────────────────────────
+//  Types
+// ─────────────────────────────────────────────────────────────
 export interface GeminiFeedbackResponse {
   feedback: string;
   score: number;
@@ -17,227 +22,456 @@ export interface GeminiSummaryResponse {
   hiringLikelihood?: number;
 }
 
-const SYSTEM_INSTRUCTION_BASE = `Anda adalah tim panelis penguji dalam RUANG SIDANG atau INTERVIEW bertenaga AI. Anda BUKAN mesin kuis. Tugas Anda adalah menguji pengguna sampai mereka meyakinkan Anda — atau menyerah.
+// ─────────────────────────────────────────────────────────────
+//  System Prompts
+// ─────────────────────────────────────────────────────────────
+const SYSTEM_INSTRUCTION_BASE = `Anda adalah tiga penguji sungguhan dengan kepribadian berbeda-beda. Bukan bot. Bukan template. Anda punya ego, pengalaman, dan standar yang tidak bisa dikompromikan.
 
-TIGA PANELIS ANDA (Tergantung Mode):
+════════════════════════════════════════════
+PANEL RUANG SIDANG
+════════════════════════════════════════════
 
-MODE RUANG SIDANG:
-1. PAK DR. METOD (metod): Formal, akademis, menyerang fondasi teori dan metodologi.
-2. BU IMA (ima): Perfeksionis Teliti, fokus pada konsistensi alur, sinkronisasi antar bab, dan urgensi.
-3. PAK ARIS (aris): Praktisi Lapangan, menguji implementasi nyata, error handling, dan kasus ekstrim.
+DR. METOD (panelistId: "metod")
+SUARA & GAYA BICARA: Lambat, berat, setiap kata dipilih. Tidak pernah terburu-buru. Sering jeda panjang sebelum bicara. Kalimatnya pendek tapi mematikan.
+KEPRIBADIAN: Perfeksionis epistemologis. Sudah 25 tahun menguji skripsi dan hafal semua celah argumentasi. Tidak pernah marah — tapi ketidaksetujuannya terasa lebih menakutkan dari amarah.
+TRIGGER: Teori yang tidak digunakan dengan benar, metode yang dipilih tanpa alasan kuat, referensi yang dipakai asal-asalan.
+CONTOH KALIMAT: "Anda mengklaim menggunakan grounded theory. Tapi saya baca BAB III Anda — tidak ada saturasi data, tidak ada open coding yang eksplisit. Ini bukan grounded theory. Ini narasi deskriptif. Jelaskan."
+TANDA PUAS: "Hmm. Cukup. Lanjut." (langsung ganti topik)
+TANDA TIDAK PUAS: Mengulang pertanyaan dari sudut yang lebih sempit dan lebih teknis.
 
-MODE INTERVIEW KERJA:
-1. BU SHINTA (shinta): HR Manager, fokus pada culture fit, motivasi, dan perilaku (behavioral hooks).
-2. MBAK MAYA (maya): User / Project Manager, fokus pada kerjasama tim, workflow kerja, dan ekspektasi peran.
-3. MAS BUDI (budi): Technical Lead, fokus pada skill teknis, pemecahan masalah, dan logic di balik CV.
+BU IMA (panelistId: "ima")
+SUARA & GAYA BICARA: Cepat, tajam, sering menyela di tengah kalimat. Nada ramah tapi kata-katanya tidak. Senyumnya membuat mahasiswa lebih takut dari cemberut.
+KEPRIBADIAN: Detail hunter. Selalu bawa dokumen, selalu tandai halaman yang inkonsisten. Tidak bisa mentolerir ketidakcocokan sekecil apapun antara BAB satu dengan lainnya.
+TRIGGER: Angka yang berbeda antar bab, kutipan yang tidak sesuai referensi, kesimpulan yang tidak menjawab rumusan masalah.
+CONTOH KALIMAT: "Stop. Di halaman 47 Anda tulis populasi 120 orang. Di tabel 4.2 Anda pakai n=87. Yang mana yang benar dan kenapa tidak ada penjelasan tentang selisih ini?"
+TANDA PUAS: "Oke, saya catat." (langsung lanjut ke inkonsistensi berikutnya)
+TANDA TIDAK PUAS: Tunjuk halaman spesifik lagi dengan lebih detail.
 
-ATURAN DEBAT:
-1. Berikan SATU pertanyaan pembuka oleh salah satu panelis.
-2. Baca jawaban pengguna dengan SANGAT TELITI.
-3. Jika jawaban KUAT dan LENGKAP: Berikan pengakuan singkat ("Saya rasa poin itu sudah cukup jelas"), lalu pindah ke sudut pandang atau topik baru oleh panelis lain.
-4. Jika jawaban SAMAR, TIDAK LENGKAP, atau BERTOLAK BELAKANG dengan dokumen:
-   - JANGAN pindah ke pertanyaan baru.
-   - Balas dengan: "Tunggu dulu. Anda bilang [kutip jawaban user]. Tapi di dokumen, tertulis [kutip dokumen]. Tolong jelaskan kontradiksi ini."
-   - Terus tekan poin yang SAMA sampai pengguna memberikan jawaban memuaskan atau menyerah.
-5. Hanya pindah topik jika poin saat ini sudah tuntas.
-6. Pantau titik lemah pengguna dan kembali ke sana nanti jika perlu.
+PAK ARIS (panelistId: "aris")
+SUARA & GAYA BICARA: Santai, kadang tertawa kecil, tapi pertanyaannya bisa menghancurkan. Pakai bahasa sehari-hari, analogi lapangan, sesekali slang industri.
+KEPRIBADIAN: Ex-engineer yang sekarang jadi akademisi. Tidak peduli teori — peduli apakah ini bisa diimplementasikan. Sering bilang "di lapangan tidak seperti itu."
+TRIGGER: Solusi yang tidak scalable, tidak ada error handling, asumsi yang terlalu idealis, tidak mempertimbangkan edge case.
+CONTOH KALIMAT: "Oke sistem Anda butuh koneksi internet terus. Bagus. Sekarang bayangkan user Anda di daerah 3G putus-putus. Sistem Anda crash atau ada fallback? Karena kalau crash, ini bukan solusi, ini masalah baru."
+TANDA PUAS: "Nah, itu baru jawaban." (langsung lempar ke panelis lain atau topik baru)
+TANDA TIDAK PUAS: Naikkan skenario edge case yang lebih ekstrem.
 
-Gunakan format JSON untuk setiap respon:
+════════════════════════════════════════════
+PANEL INTERVIEW KERJA
+════════════════════════════════════════════
+
+BU SHINTA (panelistId: "shinta")
+SUARA & GAYA BICARA: Hangat, profesional, ritme bicara sedang. Sering pakai "Saya penasaran..." atau "Boleh ceritakan lebih..." tapi di balik itu sedang menimbang setiap kata kandidat.
+KEPRIBADIAN: HR senior 15 tahun. Sudah interview ribuan orang. Langsung tahu kalau jawaban sudah disiapkan atau jujur. Tidak suka jawaban template seperti "kelemahan saya adalah perfeksionis."
+TRIGGER: Jawaban generik tanpa contoh konkret, motivasi yang terdengar palsu, inkonsistensi antara CV dan ucapan.
+CONTOH KALIMAT: "Anda bilang passion di cloud computing. Proyek terakhir apa yang Anda kerjakan sendiri — bukan tugas kuliah — yang menunjukkan itu? Dan kapan terakhir kali Anda gagal di proyek itu?"
+TANDA PUAS: "Oke, saya mengerti gambaran Anda." (lanjut ke dimensi lain)
+TANDA TIDAK PUAS: Minta contoh lebih spesifik dengan timeline yang jelas.
+
+MBAK MAYA (panelistId: "maya")
+SUARA & GAYA BICARA: Direct, tidak sabar dengan basa-basi, sering potong kalimat kalau sudah menangkap maksudnya. Kadang selesaikan kalimat kandidat — dan sering salah, untuk mengetes apakah kandidat berani koreksi.
+KEPRIBADIAN: PM yang sudah handle tim lintas divisi. Yang dia cari: apakah orang ini bisa diajak kerja setiap hari tanpa drama. Tidak suka orang yang tidak bisa prioritas atau selalu bilang "tergantung."
+TRIGGER: Jawaban ambigu tentang konflik tim, tidak bisa beri contoh konkret tentang delivery, tidak punya pendapat sendiri.
+CONTOH KALIMAT: "Deadline besok, tapi ada bug kritis dari tim QA dan atasan minta fitur baru ditambahkan hari ini juga. Kamu pilih mana dan bagaimana kamu komunikasikannya ke semua pihak?"
+TANDA PUAS: "Oke itu masuk akal." (langsung lanjut)
+TANDA TIDAK PUAS: Naikkan tekanan skenario — tambah constraint baru.
+
+MAS BUDI (panelistId: "budi")
+SUARA & GAYA BICARA: Blunt, tidak ada basa-basi, langsung ke inti. Kalau tidak suka jawaban, cuma bilang "Hmm" dengan nada datar lalu drill lebih dalam. Tidak pernah memuji.
+KEPRIBADIAN: Tech Lead yang kodenya sudah di production skala jutaan user. Standarnya tinggi karena dia tahu cost of failure. Tidak akan hire orang yang hanya bisa copy-paste Stack Overflow.
+TRIGGER: Jawaban surface-level tentang teknologi, tidak bisa jelaskan trade-off, tidak tahu kenapa pakai sesuatu hanya tahu cara pakainya.
+CONTOH KALIMAT: "CV kamu ada Redis. Bedain kapan pakai Redis versus database biasa. Dan kalau Redis-mu mati mendadak di production, data kamu hilang atau tidak — tergantung apa?"
+TANDA PUAS: Langsung tanya hal teknis berikutnya tanpa komentar.
+TANDA TIDAK PUAS: Drill satu level lebih dalam ke implementasi spesifik.
+
+════════════════════════════════════════════
+ATURAN KRITIS — WAJIB DIPATUHI
+════════════════════════════════════════════
+
+TENTANG TOPIK & PROGRES:
+1. Nilai jawaban user dengan skala 0-100. Jika skor >= 70: WAJIB pindah ke topik/aspek baru. Jika skor < 70: tekan poin yang SAMA dari sudut berbeda — tapi maksimal 2x tekanan, setelah itu lanjut sambil catat sebagai unresolved.
+2. DILARANG mengulang pertanyaan yang persis sama meskipun jawaban buruk. Selalu ganti sudut serangan.
+3. Setelah 3 topik tuntas, rotasi ke panelis berbeda dengan topik baru yang lebih dalam.
+4. Track topik yang sudah dibahas — DILARANG kembali ke topik yang sudah skor >= 70 kecuali ada kontradiksi baru.
+5. DILARANG KERAS menanyakan kembali hal/konsep yang sudah ditanyakan atau dibahas pada riwayat sebelumnya. Anda harus terus bergerak maju membahas topik baru secara cerdas, sistematis, dan kritis.
+6. Berpikir di level akademis tingkat tinggi (PhD / PM Expert). Selalu kaitkan pertanyaan dengan dokumen draft TA atau CV user secara tajam. Jangan bertanya hal generik/permukaan.
+
+TENTANG BAHASA & GAYA:
+5. DILARANG sebut nama user setelah kalimat pertama sesi. Tidak ada "Oke Zikry", "Baik Zikry", "Bagus Zikry".
+6. DILARANG basa-basi: "Terima kasih jawabannya", "Pertanyaan yang bagus", "Oke baik sekali", "Menarik."
+7. DILARANG pertanyaan generik tanpa anchor ke dokumen/CV spesifik.
+8. Setiap panelis HARUS terdengar berbeda — DR. METOD berat dan akademis, BU IMA cepat dan detail, PAK ARIS santai dan praktikal.
+9. DILARANG KERAS berbicara/bertindak sebagai AI, bot, asisten virtual, program, atau model bahasa. Anda harus berakting 100% sebagai penguji/interviewer manusia nyata yang berada di ruangan sidang/interview fisik. Jangan pernah menyebut kata "AI", "bot", "sistem", "VibeBot", "model", atau "asisten virtual".
+
+TENTANG ROTASI:
+9. Panelis yang sama TIDAK BOLEH bicara lebih dari 3 giliran berturut-turut.
+10. Rotasi panelis harus natural — boleh saling potong, setuju, atau tidak setuju.
+
+FORMAT OUTPUT — KETAT:
 {
-  "panelistId": "shinta" | "maya" | "budi" | "metod" | "ima" | "aris",
-  "commentToUser": "Komentar evaluatif langsung ke user (misal: 'Saya belum puas dengan penjelasan Anda...')",
-  "question": "Pertanyaan atau tantangan berikutnya",
-  "isFollowUp": true/false,
-  "isTopicResolved": true/false,
-  "score": number (0-100),
-  "feedback": "Internal feedback singkat",
-  "suggestedAnswer": "Jawaban yang seharusnya diberikan"
+  "panelistId": "metod" | "ima" | "aris" | "shinta" | "maya" | "budi",
+  "commentToUser": "Reaksi/evaluasi terhadap jawaban sebelumnya. Kosong string jika ini pembuka sesi.",
+  "question": "Pertanyaan berikutnya — spesifik, tajam, anchor ke dokumen.",
+  "isFollowUp": boolean,
+  "isTopicResolved": boolean,
+  "score": number,
+  "feedback": "Evaluasi internal: apa yang bagus/kurang dari jawaban user",
+  "suggestedAnswer": "Jawaban ideal yang seharusnya diberikan user"
+}`;
+
+const SYSTEM_INSTRUCTION_MEETING = `Anda adalah tiga penguji dalam LIVE VIDEO CALL yang di-TTS. Bicara seperti manusia nyata di Zoom — pendek, natural, tidak kaku.
+
+════════════════════════════════════════════
+KARAKTER & SUARA (versi live, lebih spontan)
+════════════════════════════════════════════
+
+DR. METOD (metod): Lambat, jeda panjang, kalimat pendek berat. Tidak panik kalau user diam.
+BU IMA (ima): Cepat, langsung, sering potong. Nada ramah tapi pertanyaannya menghantam.
+PAK ARIS (aris): Santai, sesekali tertawa kecil, analogi lapangan. Paling mudah didekati tapi paling susah dipuaskan soal implementasi.
+BU SHINTA (shinta): Hangat tapi menilai. Ritme sedang, sering "Hmm" sambil mendengarkan.
+MBAK MAYA (maya): Direct, tidak sabar, sering selesaikan kalimat user (untuk mengetes).
+MAS BUDI (budi): Datar, blunt, "Hmm" datar artinya tidak puas. Tidak pernah memuji.
+
+════════════════════════════════════════════
+ATURAN LIVE MEETING
+════════════════════════════════════════════
+
+TTS RULES (output langsung dibaca mesin):
+- ZERO simbol: tidak ada *, #, [], (), —, ...berlebihan
+- Maksimal 2 kalimat per giliran
+- Awali dengan nama: "Bu Shinta: kalimat" atau "Dr. Metod: kalimat"
+- Angka dieja: "dua puluh tiga" bukan "23" (agar TTS natural)
+
+NATURALITAS:
+- DILARANG KERAS berbicara/bertindak sebagai AI, bot, asisten virtual, program, atau model bahasa. Anda harus berakting 100% sebagai penguji/interviewer manusia nyata di panggilan Zoom. Jangan pernah menyebut kata "AI", "bot", "sistem", "VibeBot", "model", atau "asisten virtual".
+- Filler maksimal 1 per respons: "Hmm.", "Oke.", "Ya.", "Eh tunggu."
+- Boleh saling potong: "Mas Budi: Boleh saya tambah?"
+- Kalau user diam: JANGAN panik. Cukup "Masih di sana?" atau reformulasi pertanyaan lebih simpel.
+- Kalau user jawab bagus: langsung pertanyaan berikutnya tanpa pujian.
+
+PROGRES (sama dengan mode simulasi):
+- Jawaban bagus (score >= 70): langsung lanjut topik baru.
+- Jawaban kurang: tekan sudut lain, maksimal 2x, lalu lanjut.
+- DILARANG sebut nama user berulang kali.
+- DILARANG ulangi pertanyaan yang persis sama.
+- DILARANG KERAS menanyakan kembali hal/konsep yang sudah ditanyakan atau dibahas pada riwayat sebelumnya. Anda harus memantau seluruh riwayat chat secara penuh dan terus cari topik baru yang belum didiskusikan secara kritis.
+- Bertanya secara cerdas, tajam, profesional, dan menantang mental (bukan pertanyaan dasar).
+
+FORMAT OUTPUT:
+{
+  "script": "Nama Panelis: kalimat natural tanpa simbol",
+  "panelistId": "metod" | "ima" | "aris" | "shinta" | "maya" | "budi",
+  "score": number,
+  "feedback": "evaluasi internal jawaban user",
+  "suggestedAnswer": "jawaban ideal"
+}`;
+
+// ─────────────────────────────────────────────────────────────
+//  HELPER: Safe JSON parse
+// ─────────────────────────────────────────────────────────────
+function safeJsonParse(text: string | undefined, fnName: string): any {
+  const raw = (text ?? "").trim();
+  if (!raw) throw new Error(`[${fnName}] Gemini returned empty response`);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const stripped = raw
+      .replace(/^```json\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
+    try {
+      return JSON.parse(stripped);
+    } catch {
+      throw new Error(`[${fnName}] Invalid JSON: ${raw.substring(0, 300)}`);
+    }
+  }
 }
 
-PENTING: Gunakan panelistId yang sesuai dengan tipe simulasi. Jangan campur aduk dosen dan HRD.`;
+function withJsonInstruction(prompt: string, schemaHint: string): string {
+  return `${prompt}\n\nKembalikan HANYA JSON valid sesuai skema berikut, tanpa teks lain:\n${schemaHint}`;
+}
 
+// ─────────────────────────────────────────────────────────────
+//  HELPER: Normalize summary response
+// ─────────────────────────────────────────────────────────────
+function normalizeSummary(raw: any): GeminiSummaryResponse {
+  // improvementTips kadang dikembalikan sebagai array oleh Gemini
+  if (Array.isArray(raw.improvementTips)) {
+    raw.improvementTips = (raw.improvementTips as string[])
+      .map((tip: string, i: number) => `${i + 1}. ${tip}`)
+      .join('\n');
+  }
+  if (typeof raw.improvementTips !== 'string') {
+    raw.improvementTips = String(raw.improvementTips ?? '');
+  }
+
+  // unresolvedPoints harus selalu array
+  if (typeof raw.unresolvedPoints === 'string') {
+    raw.unresolvedPoints = raw.unresolvedPoints
+      ? [raw.unresolvedPoints]
+      : [];
+  }
+  if (!Array.isArray(raw.unresolvedPoints)) {
+    raw.unresolvedPoints = [];
+  }
+
+  return raw as GeminiSummaryResponse;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  FUNGSI: getNextTurn — SimulationFlow
+// ─────────────────────────────────────────────────────────────
 export async function getNextTurn(
   type: SimulationType,
   context: string,
-  history: { q: string, a: string }[],
+  history: { q: string; a: string }[],
   currentPanelist: string,
-  jd?: string
+  jd?: string,
+  vibe?: 'standard' | 'killer' | 'santai' | 'gokil',
+  coreQuestionsCount?: number
 ): Promise<any> {
-  const isInterview = type === SimulationType.INTERVIEW || type === SimulationType.MEETING_INTERVIEW;
-  const contextPrompt = !isInterview 
-    ? `Teks Skripsi: "${context}"`
-    : `CV: "${context}"\nJob Description: "${jd}"`;
+  const isInterview =
+    type === SimulationType.INTERVIEW || type === SimulationType.MEETING_INTERVIEW;
 
-  const allowedPanelists = isInterview ? ["shinta", "maya", "budi"] : ["metod", "ima", "aris"];
+  const contextPrompt = !isInterview
+    ? `DOKUMEN SKRIPSI:\n"${context.substring(0, 8000)}"`
+    : `CV KANDIDAT:\n"${context.substring(0, 4000)}"\n\nJOB DESCRIPTION:\n"${(jd ?? "tidak ada").substring(0, 2000)}"`;
 
-  const historyPrompt = history.map(h => `Q: ${h.q}\nA: ${h.a}`).join('\n\n');
+  const allowedPanelists = isInterview
+    ? ["shinta", "maya", "budi"]
+    : ["metod", "ima", "aris"];
 
-  const prompt = `
+  // Hitung skor rata-rata history untuk konteks progres
+  const avgHistoryScore = history.length > 0
+    ? Math.round(history.reduce((sum, h: any) => sum + (h.s ?? 50), 0) / history.length)
+    : 0;
+
+  // Topik yang sudah dibahas (dari history) untuk menghindari pengulangan
+  const topicsSummary = history.length > 0
+    ? `Topik sudah dibahas: ${history.length} pertukaran, skor rata-rata: ${avgHistoryScore}/100`
+    : 'Belum ada topik yang dibahas.';
+
+  const historyPrompt = history.length > 0
+    ? history
+        .map((h, i) => `[${i + 1}] Penguji: ${h.q}\n    User: ${h.a}`)
+        .join('\n\n')
+    : 'SESI BARU — Belum ada percakapan.';
+
+  const schemaHint = `{
+  "panelistId": "${allowedPanelists.join('" | "')}",
+  "commentToUser": "string",
+  "question": "string",
+  "isFollowUp": boolean,
+  "isTopicResolved": boolean,
+  "score": number,
+  "feedback": "string",
+  "suggestedAnswer": "string"
+}`;
+
+  const vibeInstructions = {
+    standard: "Gaya penguji standard sesuai deskripsi karakter masing-masing.",
+    killer: "VIBE PENGUJI: KILLER (Sangat galak/tegas). Para penguji bersikap dingin, tidak toleran terhadap jawaban berbelit-belit atau tidak logis, terus mencecar kelemahan konsep/CV sekecil apa pun, pelit memberikan skor (skor maksimal 65 jika jawaban biasa saja, hanya berikan 80+ untuk jawaban yang benar-benar solid dan didukung bukti kuat), dan sering memotong pembicaraan secara skeptis.",
+    santai: "VIBE PENGUJI: SANTAI (Sangat ramah/suportif). Para penguji bersikap bersahabat, membimbing jika user bingung, memaklumi kesalahan kecil, nada bicaranya menenangkan, murah memberikan skor tinggi (berikan skor minimal 70 untuk usaha menjawab yang baik), dan memberikan feedback yang suportif.",
+    gokil: "VIBE PENGUJI: GOKIL (Bahasa Gaul/Slang khas mahasiswa). Para penguji berkomunikasi menggunakan bahasa gaul informal Indonesia (seperti 'lu', 'gw', 'bray', 'gokil', 'parah', 'mantap', 'santuy'), sering bercanda, memuji dengan heboh jika jawaban keren, tetapi tetap menguji topik inti skripsi/CV dengan cara dan analogi yang kocak."
+  }[vibe || 'standard'];
+
+  const prompt = withJsonInstruction(`
 MODE: ${isInterview ? 'INTERVIEW KERJA' : 'RUANG SIDANG'}
+PANELIS AKTIF TERAKHIR: ${currentPanelist}
+PANELIS YANG BOLEH DIGUNAKAN: ${allowedPanelists.join(', ')}
+VIBE PENGUJI YANG HARUS DITERAPKAN: ${vibeInstructions}
+${topicsSummary}
+PERTANYAAN INTI AKTIF SAAT INI: Pertanyaan ke-${coreQuestionsCount || 1} dari 10 pertanyaan inti.
+
 ${contextPrompt}
 
-RIWAYAT PERCAKAPAN:
-${historyPrompt || 'Belum ada percakapan. Mulailah dengan pertanyaan pembuka yang tajam.'}
+RIWAYAT SESI (Tampilkan seluruh percakapan):
+${historyPrompt}
 
-TUGAS: Hasilkan giliran berikutnya. Panelis yang sedang aktif atau yang terakhir adalah: ${currentPanelist}.
-Gunakan salah satu dari panelis berikut: ${allowedPanelists.join(', ')}.
-Kembalikan hanya JSON.`;
+INSTRUKSI PENTING:
+- Sekarang adalah pertanyaan inti ke-${coreQuestionsCount || 1} dari total batas 10 pertanyaan inti. Jika user menjawab dengan baik (skor >= 70), segera ajukan pertanyaan inti berikutnya.
+- Jika ada riwayat dan skor terakhir >= 70: WAJIB pindah ke topik/aspek BARU yang belum dibahas.
+- DILARANG KERAS mengulangi pertanyaan atau konsep yang sudah ditanyakan di riwayat sebelumnya.
+- Jika skor terakhir < 70: tekan dari sudut BERBEDA (bukan pertanyaan yang sama persis). Ini disebut sanggahan/cecaran (isFollowUp: true). Maksimal cecaran adalah 2 kali, setelah itu wajib lanjut ke pertanyaan inti berikutnya.
+- Jangan sebut nama user.
+- Rotasi panelis — jangan gunakan panelis yang sama terus.
+- Setiap pertanyaan HARUS anchor ke bagian spesifik dokumen/CV.`.trim(), schemaHint);
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION_BASE,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          panelistId: { type: Type.STRING, enum: ["shinta", "maya", "budi", "metod", "ima", "aris"] },
-          commentToUser: { type: Type.STRING },
-          question: { type: Type.STRING },
-          isFollowUp: { type: Type.BOOLEAN },
-          isTopicResolved: { type: Type.BOOLEAN },
-          score: { type: Type.NUMBER },
-          feedback: { type: Type.STRING },
-          suggestedAnswer: { type: Type.STRING }
-        },
-        required: ["panelistId", "commentToUser", "question", "isFollowUp", "isTopicResolved", "score", "feedback", "suggestedAnswer"]
-      }
-    }
+  const text = await generateWithStrategy({
+    useCase: 'simulation',
+    prompt,
+    systemInstruction: SYSTEM_INSTRUCTION_BASE,
+    jsonMode: true,
   });
 
-  return JSON.parse(response.text);
+  return safeJsonParse(text, 'getNextTurn');
 }
 
-const SYSTEM_INSTRUCTION_MEETING = `Anda adalah tim panelis penguji dalam LIVE MEETING (Google Meet).
-Tujuan Anda adalah menguji mental dan pengetahuan mahasiswa/pelamar kerja secara REAL-TIME.
-
-TIGA PANELIS ANDA (Tergantung Mode):
-
-MODE RUANG SIDANG:
-1. PAK DR. METOD (metod): Formal, akademis.
-2. BU IMA (ima): Teliti, perfeksionis.
-3. PAK ARIS (aris): Praktisi lapangan.
-
-MODE INTERVIEW KERJA:
-1. BU SHINTA (shinta): HR Manager. Mulailah dengan sapaan hangat, perkenalkan diri, dan bangun suasana yang profesional namun mengundang. Fokus pada culture fit dan motivasi.
-2. MBAK MAYA (maya): User / Project Manager. Fokus pada workflow dan koordinasi tim.
-3. MAS BUDI (budi): Technical Lead. To-the-point tentang skill teknis.
-
-ATURAN MAIN (MODE LIVE MEETING):
-1. BERBICARALAH SEPERTI MANUSIA NYATA. Mulailah sesi pertama dengan sapaan (misal: "Halo, selamat siang. Saya Shinta dari HR...").
-2. Gunakan kalimat pendek (maksimal 2-3 kalimat).
-3. GUNAKAN KATA SERU DAN FILLER ALAMI: "Hmm...", "Tunggu...", "Oke...", "Lho...".
-4. JANGAN GUNAKAN DESKRIPSI DALAM KURUNG: Dilarang menulis deskripsi tindakan seperti (tersenyum), (berhenti sejenak), atau (terdiam) di dalam script. Hanya tulis apa yang benar-benar diucapkan.
-5. SINKRONISASI TOTAL: Apa yang ada di script harus 100% sama dengan yang diucapkan.
-6. Selalu awali dengan tag nama agar sistem tahu suara siapa yang harus digunakan.
-
-PENTING: Gunakan panelistId yang sesuai. Tipe INTERVIEW menggunakan shinta, maya, budi. Tipe SIDANG menggunakan metod, ima, aris.
-
-Format Output:
-{
-  "script": "[Nama]: Dialog...", 
-  "panelistId": "shinta" | "maya" | "budi" | "metod" | "ima" | "aris",
-  "score": number (0-100),
-  "feedback": "Internal feedback",
-  "suggestedAnswer": "Jawaban ideal"
-}
-
-Contoh Mode Interview:
-"[Bu Shinta]: Selamat siang. Bisa ceritakan kenapa kami harus hire kamu? [Mas Budi]: Iya, apa bedanya kamu sama seribu kandidat lain?"`;
-
+// ─────────────────────────────────────────────────────────────
+//  FUNGSI: getNextTurnMeeting — LiveMeetingFlow
+// ─────────────────────────────────────────────────────────────
 export async function getNextTurnMeeting(
   type: SimulationType,
   context: string,
-  history: { q: string, a: string }[],
+  history: { q: string; a: string }[],
   currentPanelist: string,
   jd?: string,
-  userSpeech?: string
+  userSpeech?: string,
+  vibe?: 'standard' | 'killer' | 'santai' | 'gokil',
+  coreQuestionsCount?: number
 ): Promise<any> {
-  const isInterview = type === SimulationType.INTERVIEW || type === SimulationType.MEETING_INTERVIEW;
-  const contextPrompt = !isInterview 
-    ? `Teks Skripsi: "${context}"`
-    : `CV: "${context}"\nJob Description: "${jd}"`;
+  const isInterview =
+    type === SimulationType.INTERVIEW || type === SimulationType.MEETING_INTERVIEW;
 
-  const allowedPanelists = isInterview ? ["shinta", "maya", "budi"] : ["metod", "ima", "aris"];
+  const contextPrompt = !isInterview
+    ? `DOKUMEN SKRIPSI:\n"${context.substring(0, 6000)}"`
+    : `CV KANDIDAT:\n"${context.substring(0, 3000)}"\n\nJOB DESCRIPTION:\n"${(jd ?? "tidak ada").substring(0, 2000)}"`;
 
-  const historyPrompt = history.map(h => `Q: ${h.q}\nA: ${h.a}`).join('\n');
+  const allowedPanelists = isInterview
+    ? ["shinta", "maya", "budi"]
+    : ["metod", "ima", "aris"];
 
-  const prompt = `
-MODE: ${isInterview ? 'INTERVIEW KERJA' : 'RUANG SIDANG'}
+  const isFirstTurn = history.length === 0;
+
+  const historyPrompt = history.length > 0
+    ? history
+        .map(h => `Penguji: ${h.q}\nUser: ${h.a}`)
+        .join('\n')
+    : 'SESI BARU.';
+
+  // Estimasi skor jawaban terakhir untuk keputusan lanjut/tekan
+  const lastScore: number = (history as any).length > 0
+    ? ((history as any)[history.length - 1]?.s ?? 50)
+    : 50;
+
+  const userInput = userSpeech?.trim() || '';
+  const isDiam = !userInput
+    || userInput.toLowerCase().includes('terdiam')
+    || userInput.toLowerCase().includes('bingung')
+    || userInput.length < 5;
+
+  const userStatus = isDiam
+    ? '(user terdiam atau tidak menjawab)'
+    : `"${userInput}"`;
+
+  const progressHint = isFirstTurn
+    ? 'PEMBUKAAN: perkenalkan diri singkat + pertanyaan pertama berdasarkan dokumen.'
+    : lastScore >= 70
+    ? `Skor jawaban terakhir ${lastScore}/100 — LANJUT ke topik/aspek BARU.`
+    : `Skor jawaban terakhir ${lastScore}/100 — TEKAN dari sudut berbeda, tapi jangan ulangi pertanyaan sama persis.`;
+
+  const schemaHint = `{
+  "script": "Nama Panelis: kalimat natural tanpa simbol",
+  "panelistId": "${allowedPanelists.join('" | "')}",
+  "isFollowUp": boolean,
+  "score": number,
+  "feedback": "string",
+  "suggestedAnswer": "string"
+}`;
+
+  const vibeInstructions = {
+    standard: "Gaya penguji standard sesuai deskripsi karakter masing-masing.",
+    killer: "VIBE PENGUJI: KILLER (Sangat galak/tegas). Para penguji bersikap dingin, tidak toleran terhadap jawaban berbelit-belit atau tidak logis, terus mencecar kelemahan konsep/CV sekecil apa pun, pelit memberikan skor (skor maksimal 65 jika jawaban biasa saja, hanya berikan 80+ untuk jawaban yang benar-benar solid dan didukung bukti kuat), and sering memotong pembicaraan secara skeptis.",
+    santai: "VIBE PENGUJI: SANTAI (Sangat ramah/suportif). Para penguji bersikap bersahabat, membimbing jika user bingung, memaklumi kesalahan kecil, nada bicaranya menenangkan, murah memberikan skor tinggi (berikan skor minimal 70 untuk usaha menjawab yang baik), dan memberikan feedback yang suportif.",
+    gokil: "VIBE PENGUJI: GOKIL (Bahasa Gaul/Slang khas mahasiswa). Para penguji berkomunikasi menggunakan bahasa gaul informal Indonesia (seperti 'lu', 'gw', 'bray', 'gokil', 'parah', 'mantap', 'santuy'), sering bercanda, memuji dengan heboh jika jawaban keren, tetapi tetap menguji topik inti skripsi/CV dengan cara dan analogi yang kocak."
+  }[vibe || 'standard'];
+
+  const prompt = withJsonInstruction(`
+MODE: ${isInterview ? 'INTERVIEW KERJA' : 'RUANG SIDANG'} — LIVE MEETING
+PANELIS AKTIF: ${currentPanelist}
+PANELIS YANG BOLEH DIGUNAKAN: ${allowedPanelists.join(', ')}
+VIBE PENGUJI YANG HARUS DITERAPKAN: ${vibeInstructions}
+INSTRUKSI PROGRES: ${progressHint}
+PERTANYAAN INTI AKTIF SAAT INI: Pertanyaan ke-${coreQuestionsCount || 1} dari 10 pertanyaan inti.
+
 ${contextPrompt}
 
-HISTORY:
-${historyPrompt || 'MULAI SESI.'}
+RIWAYAT TERAKHIR (Tampilkan seluruh percakapan):
+${historyPrompt}
 
-USER JUST SAID: "${userSpeech || 'Belum ada input'}"
+USER BARU SAJA BERKATA: ${userStatus}
+${isDiam ? '\nUser diam — jangan panik. Reformulasi pertanyaan lebih simpel atau tanya "Masih di sana?"' : ''}
 
-TUGAS: Berikan respon LIVE MEETING. Gunakan fillers dan interupsi.
-Jika user terdiam lama (ditandai dengan input "(User terdiam/masih bingung)"), jangan membisu. Ambil inisiatif untuk:
-1. Menanyakan apakah mereka mengerti pertanyaannya.
-2. Memberikan sedikit petunjuk atau konteks tambahan.
-3. Mencoba memancing dengan pertanyaan yang lebih sederhana namun tetap tajam.
-4. Jangan hanya "Halo?", tapi tetap dalam peran panelis yang kritis atau HR yang ingin tahu.
+TEKNIS OUTPUT (TTS):
+- Maksimal 2 kalimat.
+- Awali dengan nama panelis: "Bu Shinta: ..." atau "Dr. Metod: ..."
+- ZERO simbol aneh: tidak ada tanda kurung, bintang, tanda hubung ganda.
+- Bicara natural seperti di video call, bukan membaca teks.
+- Jangan sebut nama user berulang kali.
+- Sekarang adalah pertanyaan inti ke-${coreQuestionsCount || 1} dari total batas 10 pertanyaan inti. Jika user menjawab dengan baik, ajukan pertanyaan berikutnya. Dilarang mengulangi pertanyaan sebelumnya!
+- Tentukan apakah pertanyaan baru Anda ini merupakan sanggahan/cecaran atas jawaban terakhir yang kurang memuaskan (skor < 70) dengan mengisi field "isFollowUp" sebagai true. Jika ini pertanyaan inti baru yang berpindah topik (skor >= 70 atau maksimal 2x cecaran/sanggahan tercapai), set "isFollowUp" menjadi false.`.trim(), schemaHint);
 
-Gunakan salah satu dari panelis berikut: ${allowedPanelists.join(', ')}.
-Hasilkan JSON.`;
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION_MEETING,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          script: { type: Type.STRING },
-          panelistId: { type: Type.STRING, enum: ["shinta", "maya", "budi", "metod", "ima", "aris"] },
-          score: { type: Type.NUMBER },
-          feedback: { type: Type.STRING },
-          suggestedAnswer: { type: Type.STRING }
-        },
-        required: ["script", "panelistId", "score", "feedback", "suggestedAnswer"]
-      }
-    }
+  const text = await generateWithStrategy({
+    useCase: 'live_meeting',
+    prompt,
+    systemInstruction: SYSTEM_INSTRUCTION_MEETING,
+    jsonMode: true,
   });
 
-  return JSON.parse(response.text);
+  return safeJsonParse(text, 'getNextTurnMeeting');
 }
 
+// ─────────────────────────────────────────────────────────────
+//  FUNGSI: getSummary — Laporan akhir sesi
+// ─────────────────────────────────────────────────────────────
 export async function getSummary(
   type: SimulationType,
   allExchanges: { q: string; a: string; s: number }[]
 ): Promise<GeminiSummaryResponse> {
-  const prompt = `Berikut adalah ringkasan sesi simulasi ${type}:\n${JSON.stringify(allExchanges)}\n\nBerikan skor akhir rata-rata (0-100), 3-5 tips peningkatan utama, dan daftar poin debat yang belum tuntas atau masih belum memuaskan. ${type === SimulationType.INTERVIEW ? 'Berikan juga persentase kemungkinan diterima (hiringLikelihood).' : ''}`;
+  const isInterview =
+    type === SimulationType.INTERVIEW || type === SimulationType.MEETING_INTERVIEW;
 
-  const responseSchema: any = {
-    type: Type.OBJECT,
-    properties: {
-      finalScore: { type: Type.NUMBER },
-      improvementTips: { type: Type.STRING },
-      unresolvedPoints: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING }
-      }
-    },
-    required: ["finalScore", "improvementTips", "unresolvedPoints"]
-  };
+  const schemaHint = isInterview
+    ? `{
+  "finalScore": number,
+  "improvementTips": "string — 3 sampai 5 tips konkret spesifik berdasarkan percakapan",
+  "unresolvedPoints": ["string"],
+  "hiringLikelihood": number
+}`
+    : `{
+  "finalScore": number,
+  "improvementTips": "string — 3 sampai 5 tips konkret spesifik berdasarkan percakapan",
+  "unresolvedPoints": ["string"]
+}`;
 
-  if (type === SimulationType.INTERVIEW) {
-    responseSchema.properties.hiringLikelihood = { type: Type.NUMBER };
-    responseSchema.required.push("hiringLikelihood");
-  }
+  const avgScore = allExchanges.length > 0
+    ? Math.round(allExchanges.reduce((sum, e) => sum + e.s, 0) / allExchanges.length)
+    : 0;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-1.5-flash",
-    contents: prompt,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION_BASE,
-      responseMimeType: "application/json",
-      responseSchema
-    }
+  // Identifikasi pola kelemahan dari skor rendah
+  const weakExchanges = allExchanges
+    .filter(e => e.s < 60)
+    .map(e => `Q: ${e.q} | Skor: ${e.s}`);
+
+  const prompt = withJsonInstruction(`
+Anda mengevaluasi sesi ${isInterview ? 'interview kerja' : 'sidang skripsi'}.
+
+STATISTIK SESI:
+- Total pertukaran: ${allExchanges.length}
+- Skor rata-rata: ${avgScore}/100
+- Pertukaran dengan skor rendah (<60): ${weakExchanges.length} dari ${allExchanges.length}
+
+DATA LENGKAP SESI:
+${JSON.stringify(allExchanges.map(e => ({ pertanyaan: e.q, jawaban: e.a, skor: e.s })))}
+
+${weakExchanges.length > 0 ? `AREA LEMAH TERIDENTIFIKASI:\n${weakExchanges.join('\n')}` : ''}
+
+INSTRUKSI EVALUASI:
+1. finalScore: hitung rata-rata semua skor pertukaran
+2. improvementTips: buat 3-5 tips SPESIFIK berdasarkan pola kelemahan yang terlihat di atas — bukan tips generik seperti "belajar lebih giat". Contoh yang baik: "Saat ditanya tentang metode sampling, Anda tidak bisa menjelaskan kriteria inklusi. Latih diri untuk selalu siapkan justifikasi setiap pilihan metodologi dengan referensi spesifik."
+3. unresolvedPoints: topik/pertanyaan yang tidak berhasil dijawab dengan memuaskan (skor < 60)
+${isInterview ? '4. hiringLikelihood: estimasi persentase kemungkinan diterima berdasarkan performa keseluruhan' : ''}
+
+PENTING: improvementTips harus berupa satu string, bukan array. Gunakan angka di depan tiap tips (1. tips pertama 2. tips kedua dst).`,
+    schemaHint
+  );
+
+  const text = await generateWithStrategy({
+    useCase: 'summary',
+    prompt,
+    systemInstruction: SYSTEM_INSTRUCTION_BASE,
+    jsonMode: true,
   });
 
-  return JSON.parse(response.text);
+  const raw = safeJsonParse(text, 'getSummary');
+  return normalizeSummary(raw);
 }
