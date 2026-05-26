@@ -20,7 +20,45 @@ const getEnv = (key: string): string => {
 };
 
 // ─── Key Pool ─────────────────────────────────────────────────
-const KEY_POOL: string[] = [
+const STATIC_KEYS: string[] = [
+  "AIzaSyC2vuAHViB9lxpYxUDmrM0YmGfjwczngXs", // Cloud
+  "AIzaSyCC2sme11oYp-HpH6-6DlSj4Vj4WrRLQHs", // diniazik
+  "AIzaSyDl7CWbVeWLAM6kQp2XZcvCmgqtYL0gq0A", // chuby
+  "AIzaSyCOcw2pFnGvNyHStPLGGicExn5sPnp76uo", // chubyy
+  "AIzaSyDxUlH9Q4DpTOB90dKlVSGidPIKQbkQ8tA", // dini
+  "AIzaSyBeVVKUWDpcY61HnoZfir-7WDwOE8MUtLk", // xtrbs
+  "AIzaSyD1XkbFJdCE5iipwGTrtv5q9gL6CJnqzaw", // pbl
+  "AIzaSyCP_CdrWN_pAknvw0YO6L-kw0BccsxkhKE", // aldo
+  "AIzaSyBpzAnZfdvzUXVMbzFvtFosfYH5sLuqkmE", // sapa
+  "AIzaSyDAWI3CxWRuySpD-irfi1o021lU0brrxl4", // laborku
+  "AIzaSyBVnQvCJe45A3PdZkYIaQWq1l_lAVaAAxk", // kopi tembak
+  "AIzaSyBOOMS6EyN8u33nD4bqfB9HTbhDa3Tqdhc", // andre
+  "AIzaSyCrUUM6N1usp5_TN-E5cshJ7zDtyljK4ms", // kl 1
+  "AIzaSyBKdyjJQeWflLCUR4hfrF8gBUY7wLVsZkE", // 1
+  "AIzaSyB5aMB47bfh0wnLvEuiw-HLwCtgfKCsim8", // 2
+  "AIzaSyA0wWv6tmj3xuUDcaL4FaFNp3SjHoaF5uA", // 3
+  "AIzaSyBd_rSiVkKSXDNzCSCPNa8Zr7eND28INUU", // 4
+  "AIzaSyC9CdobpPXfs1w593x49Y39WdtgfhJcd_8", // 5
+  "AIzaSyAEQRY8bH2_KaXIxgdQnh4sLUjYXuhbgv0", // 6
+  "AIzaSyB27xAhMjlaaAHHWfZ0w0fUEKbZvvr_Mts", // 7
+  "AIzaSyB-zsR0FSPhVi5uHWiuNotZ31V2lrlm82w", // 9
+  "AIzaSyAvK0nD3skZ7GSQVNC0CuHe_eAL03Ikgqk", // 10
+  "AIzaSyBZpqmFqx6438mNECt9Qb2LHd-Nw33qWC0", // 11
+  "AIzaSyD-G2P-65cILLCtUX0GEbAEH-mFcPVbXBs", // 12
+  "AIzaSyBWjB_h8EzhWC9PmN_bcUSVciwwdUtaby8", // 13
+  "AIzaSyBOn4-k1ios7nB-dONCxP3I6DnMib49Et8", // 14
+  "AIzaSyCHsp9cu8xTLMQEMKXoCk9nQmebWt0n-Vs", // 15
+  "AIzaSyCkUQI84X4-VpL-b-FgLvGLy8qSEyUvEMY", // 16
+  "AIzaSyD5xLhn1deu6RXZL6W6eR5Qan_pe4NEzp0", // 17
+  "AIzaSyBHOduF2RiEAOjphvsR5FnnWa17ThX_qfY", // 18
+  "AIzaSyDi7yo3SJoYZ_rsajy5OJPtq5M_0BpZGXI", // 19
+  "AIzaSyBKxrewqF5sOLlRs8t3ilzF597Lz6hmJ9Y", // 20
+  "AIzaSyAeEdwPkMab9cVOcYPpTL7JKNeX5Mm-RQc", // 21
+  "AIzaSyDs6tj22pgLfS8f4r3x0IZiN5wVViZPggI", // 22
+  "AIzaSyCwE8eaJvJezwZmfUSWflzQF1_HgydbU84", // 23
+];
+
+const ENV_KEYS: string[] = [
   getEnv('GEMINI_API_KEY'),  // Key utama AI Studio
   getEnv('GEMINI_KEY_1'),
   getEnv('GEMINI_KEY_2'),
@@ -34,6 +72,8 @@ const KEY_POOL: string[] = [
   getEnv('GEMINI_KEY_10'),
   getEnv('GEMINI_KEY_11'),
 ].filter((k): k is string => typeof k === 'string' && k.length > 10);
+
+const KEY_POOL: string[] = Array.from(new Set([...ENV_KEYS, ...STATIC_KEYS]));
 
 if (KEY_POOL.length === 0) {
   console.error('[GeminiPool] ❌ Tidak ada API key valid! Cek .env atau Secrets panel.');
