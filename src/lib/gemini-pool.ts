@@ -9,6 +9,19 @@ import { GoogleGenAI } from '@google/genai';
 
 // ─── Environment Helper ───────────────────────────────────────
 const getEnv = (key: string): string => {
+  if (key === 'GEMINI_KEYS') {
+    return (import.meta as any).env?.VITE_GEMINI_KEYS
+        ?? (import.meta as any).env?.GEMINI_KEYS
+        ?? (typeof process !== 'undefined' ? process.env.GEMINI_KEYS : '')
+        ?? '';
+  }
+  if (key === 'GEMINI_API_KEY') {
+    return (import.meta as any).env?.VITE_GEMINI_API_KEY
+        ?? (import.meta as any).env?.GEMINI_API_KEY
+        ?? (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '')
+        ?? '';
+  }
+
   if (typeof window !== 'undefined') {
     // Vite browser — coba VITE_ prefix dulu, lalu tanpa prefix
     return (import.meta as any).env?.[`VITE_${key}`]
@@ -16,7 +29,10 @@ const getEnv = (key: string): string => {
         ?? '';
   }
   // Cloud Run / Node.js
-  return process.env?.[key] ?? '';
+  if (typeof process !== 'undefined' && process.env) {
+    return (process.env as any)?.[key] ?? '';
+  }
+  return '';
 };
 
 // ─── Key Pool ─────────────────────────────────────────────────
