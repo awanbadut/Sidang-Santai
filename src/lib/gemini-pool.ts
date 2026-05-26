@@ -10,7 +10,8 @@ import { GoogleGenAI } from '@google/genai';
 // ─── Environment Helper ───────────────────────────────────────
 const getEnv = (key: string): string => {
   if (key === 'GEMINI_KEYS') {
-    return (import.meta as any).env?.VITE_GEMINI_KEYS
+    return (typeof window !== 'undefined' ? (window as any).ENV_GEMINI_KEYS : '')
+        ?? (import.meta as any).env?.VITE_GEMINI_KEYS
         ?? (import.meta as any).env?.GEMINI_KEYS
         ?? (typeof process !== 'undefined' ? process.env.GEMINI_KEYS : '')
         ?? '';
