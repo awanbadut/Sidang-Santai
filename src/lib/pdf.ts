@@ -1,6 +1,5 @@
 import * as pdfjs from 'pdfjs-dist';
 // Use Vite's ?url import to get the path to the worker in the build
-// @ts-expect-error - Vite specific import
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;

@@ -7,6 +7,7 @@ import { User } from 'firebase/auth';
 import { auth, signInWithGoogle } from '../lib/firebase';
 import { LogOut, History, User as UserIcon, LogIn } from 'lucide-react';
 import { cn } from '../lib/utils';
+import myLogo from '../assets/my-logo.png';
 
 interface NavbarProps {
   user: User | null;
@@ -30,7 +31,7 @@ export default function Navbar({ user, onViewHistory, onLogoClick }: NavbarProps
         >
           <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center transition-all group-hover:scale-110">
             <img 
-              src="/src/assets/my-logo.png" 
+              src={myLogo} 
               alt="Siap Tampil Logo" 
               className="w-full h-full object-contain rounded-2xl" 
             />

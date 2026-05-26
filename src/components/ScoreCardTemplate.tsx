@@ -7,6 +7,7 @@ import React from 'react';
 import { SimulationType } from '../types';
 import { Sparkles, Zap, GraduationCap, Briefcase } from 'lucide-react';
 import { cn } from '../lib/utils';
+import myLogo from '../assets/my-logo.png';
 
 interface ScoreCardTemplateProps {
   userName: string;
@@ -64,7 +65,7 @@ export const ScoreCardTemplate = React.forwardRef<HTMLDivElement, ScoreCardTempl
           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-[1.5rem] border-[3px] border-slate-200 shadow-sm">
             <div className="w-10 h-10 flex items-center justify-center transition-all">
               <img 
-                src="/src/assets/my-logo.png" 
+                src={myLogo} 
                 alt="Logo" 
                 className="w-full h-full object-contain" 
               />
