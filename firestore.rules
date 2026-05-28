@@ -1,12 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 0. Default Deny
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -27,7 +25,6 @@ service cloud.firestore {
       return resource.data;
     }
 
-    // Security Rules for Users collection
     match /users/{userId} {
       function isValidUser(data) {
         return data.email is string && data.email.size() <= 256
@@ -43,7 +40,6 @@ service cloud.firestore {
                       && incoming().createdAt == existing().createdAt;
     }
 
-    // Security Rules for Simulations collection
     match /simulations/{simulationId} {
       function isValidSimulation(data) {
         return isValidId(data.userId) 
@@ -64,15 +60,17 @@ service cloud.firestore {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && isValidSimulation(incoming());
-      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidSimulation(incoming())
+      allow update: if isSignedIn() 
+                      && existing().userId == request.auth.uid 
+                      && isValidSimulation(incoming())
                       && incoming().userId == existing().userId
                       && incoming().type == existing().type
                       && incoming().createdAt == existing().createdAt
-                      && (existing().status == 'ongoing' || (incoming().status == existing().status && incoming().diff(existing()).affectedKeys().size() == 0));
+                      && !(existing().status == 'completed' && incoming().status == 'ongoing');
+
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // Allow testing connection
     match /test/connection {
       allow read: if true;
     }
