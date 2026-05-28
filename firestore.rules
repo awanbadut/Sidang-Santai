@@ -48,7 +48,7 @@ service cloud.firestore {
       function isValidSimulation(data) {
         return isValidId(data.userId) 
                && data.userId == request.auth.uid
-               && (data.type == 'sidang' || data.type == 'interview' || data.type == 'meeting_sidang' || data.type == 'meeting_interview')
+               && (data.type == 'sidang' || data.type == 'interview' || data.type == 'meeting_sidang' || data.type == 'meeting_interview' || data.type == 'flashcard_sidang' || data.type == 'flashcard_interview')
                && (data.status == 'ongoing' || data.status == 'completed')
                && data.createdAt is timestamp
                && (!('title' in data) || (data.title is string && data.title.size() <= 512))
