@@ -18,7 +18,7 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
-        "type": { "type": "string", "enum": ["sidang", "interview", "meeting_sidang", "meeting_interview"] },
+        "type": { "type": "string", "enum": ["sidang", "interview", "meeting_sidang", "meeting_interview", "flashcard_sidang", "flashcard_interview"] },
         "title": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "documentText": { "type": "string" },
