@@ -70,6 +70,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
   const [currentInput, setCurrentInput] = useState('');
   const [isAnswering, setIsAnswering] = useState(false);
   const [isProcessingFeedback, setIsProcessingFeedback] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [resolvedTopicsCount, setResolvedTopicsCount] = useState(0);
   const [finalResult, setFinalResult] = useState<any>(null);
   const [simulationId, setSimulationId] = useState<string | null>(null);
@@ -234,9 +235,30 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
 
   const finishSimulation = async (allAnswers: QuestionEntry[]) => {
     setIsProcessingFeedback(true);
+    setIsGeneratingSummary(true);
     try {
       const exchanges = allAnswers.map(a => ({ q: a.question, a: a.answer, s: a.score }));
-      const summary = await getSummary(mode, exchanges);
+      let summary;
+      try {
+        summary = await getSummary(mode, exchanges);
+      } catch (geminiErr) {
+        console.warn("Gemini summary failed, generating client fallback...", geminiErr);
+        const avgScore = allAnswers.length > 0
+          ? Math.round(allAnswers.reduce((sum, e) => sum + e.score, 0) / allAnswers.length)
+          : 0;
+        const unresolved = allAnswers
+          .filter(e => e.score < 60)
+          .map(e => e.question);
+        
+        const isInterview = mode.includes('interview');
+        summary = {
+          finalScore: avgScore,
+          improvementTips: "1. Siapkan jawaban ringkas dan terstruktur agar poin utama Anda langsung tersampaikan.\n\n2. Latih penguasaan materi teknis dan konsep dasar agar lebih percaya diri saat ditanya mendalam.\n\n3. Tetap tenang dan jawab secara sistematis meskipun ada cecaran dari penguji.",
+          unresolvedPoints: unresolved,
+          ...(isInterview ? { hiringLikelihood: Math.round(avgScore * 0.9) } : {})
+        };
+      }
+      
       setFinalResult(summary);
 
       if (simulationId) {
@@ -254,8 +276,10 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
       setStep('results');
     } catch (err) {
       console.error("Summary failed", err);
+      setErrorMsg("Gagal menyimpan hasil latihan. Harap coba lagi.");
     } finally {
       setIsProcessingFeedback(false);
+      setIsGeneratingSummary(false);
     }
   };
 
@@ -843,6 +867,20 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
           )}
         </AnimatePresence>
       </div>
+
+      {isGeneratingSummary && (
+        <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-5">
+          <div className="w-20 h-20 bg-purple-50 rounded-[2rem] flex items-center justify-center text-purple-500 border-[3px] border-purple-100 shadow-sm relative animate-bounce">
+            <Loader2 className="w-10 h-10 animate-spin text-purple-500" strokeWidth={3} />
+          </div>
+          <div className="text-center space-y-1.5 px-6">
+            <h3 className="text-xl font-black text-slate-800">Menyusun Rapor Santuy... 🎓</h3>
+            <p className="text-xs md:text-sm font-bold text-slate-400 max-w-sm mx-auto leading-relaxed">
+              Para penguji imut sedang menganalisis seluruh jawabanmu dan memformulasikan nilai akhir serta tips belajar khusus untukmu. 🧸
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
