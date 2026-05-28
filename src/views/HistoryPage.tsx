@@ -148,7 +148,10 @@ export default function HistoryPage({ onBack }: HistoryPageProps) {
         /* ── History List ── */
         <div className="grid gap-5">
           {simulations.map((sim, idx) => {
-            const isSidang = sim.type === SimulationType.SIDANG;
+            const isSidang = 
+              sim.type === SimulationType.SIDANG || 
+              sim.type === SimulationType.MEETING_SIDANG || 
+              sim.type === SimulationType.FLASHCARD_SIDANG;
             
             // Konfigurasi Warna berdasarkan Tipe
             const theme = isSidang ? {

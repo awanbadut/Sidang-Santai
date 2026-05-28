@@ -10,6 +10,8 @@ export enum SimulationType {
   INTERVIEW = 'interview',
   MEETING_SIDANG = 'meeting_sidang',
   MEETING_INTERVIEW = 'meeting_interview',
+  FLASHCARD_SIDANG = 'flashcard_sidang',
+  FLASHCARD_INTERVIEW = 'flashcard_interview',
 }
 
 export enum SimulationStatus {

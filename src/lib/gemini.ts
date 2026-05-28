@@ -418,7 +418,9 @@ export async function getSummary(
   allExchanges: { q: string; a: string; s: number }[]
 ): Promise<GeminiSummaryResponse> {
   const isInterview =
-    type === SimulationType.INTERVIEW || type === SimulationType.MEETING_INTERVIEW;
+    type === SimulationType.INTERVIEW || 
+    type === SimulationType.MEETING_INTERVIEW ||
+    type === SimulationType.FLASHCARD_INTERVIEW;
 
   const schemaHint = isInterview
     ? `{
@@ -474,4 +476,66 @@ PENTING: improvementTips harus berupa satu string, bukan array. Gunakan angka di
 
   const raw = safeJsonParse(text, 'getSummary');
   return normalizeSummary(raw);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  FUNGSI: generateFlashcards — Membuat kuis pilihan ganda
+// ─────────────────────────────────────────────────────────────
+export interface Flashcard {
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+  feedback: string;
+}
+
+export async function generateFlashcards(
+  type: SimulationType,
+  context: string,
+  jd?: string,
+  vibe?: 'standard' | 'killer' | 'santai' | 'gokil'
+): Promise<Flashcard[]> {
+  const isInterview = type === SimulationType.FLASHCARD_INTERVIEW;
+
+  const contextPrompt = !isInterview
+    ? `DOKUMEN SKRIPSI:\n"${context.substring(0, 10000)}"`
+    : `CV KANDIDAT:\n"${context.substring(0, 5000)}"\n\nJOB DESCRIPTION:\n"${(jd ?? "tidak ada").substring(0, 2000)}"`;
+
+  const schemaHint = `{
+  "flashcards": [
+    {
+      "question": "string (pertanyaan spesifik terkait dokumen)",
+      "options": [
+        "string (Pilihan A, sertakan awalan 'A. ')",
+        "string (Pilihan B, sertakan awalan 'B. ')",
+        "string (Pilihan C, sertakan awalan 'C. ')"
+      ],
+      "correctOptionIndex": number (0 untuk A, 1 untuk B, 2 untuk C),
+      "feedback": "string (penjelasan singkat mengapa jawaban tersebut benar dan yang lain salah)"
+    }
+  ]
+}`;
+
+  const prompt = withJsonInstruction(`
+MODE: FLASHCARD ${isInterview ? 'INTERVIEW KERJA' : 'SIDANG SKRIPSI/TA'}
+TUGAS: Hasilkan tepat 10 kuis flashcard pilihan ganda (A, B, C) yang spesifik dan menantang berdasarkan dokumen di bawah ini.
+
+${contextPrompt}
+
+KETERANGAN SOAL:
+- Hubungkan pertanyaan dengan data, metodologi, bab, kelemahan, atau detail proyek dalam dokumen secara langsung.
+- Pilihan jawaban harus menantang (distractor/pilihan pengecoh harus terdengar logis).
+- Berikan penomoran A., B., C. pada masing-masing opsi pilihan.
+- Berikan feedback yang edukatif dan bersahabat.
+- Hasilkan tepat 10 kuis flashcard.
+  `.trim(), schemaHint);
+
+  const text = await generateWithStrategy({
+    useCase: 'document_analysis',
+    prompt,
+    systemInstruction: "Anda adalah dosen penguji/HRD kritis yang membuat kuis kognitif interaktif pilihan ganda A, B, C dari draf skripsi/CV kandidat.",
+    jsonMode: true,
+  });
+
+  const parsed = safeJsonParse(text, 'generateFlashcards');
+  return parsed.flashcards || [];
 }

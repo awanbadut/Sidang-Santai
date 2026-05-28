@@ -33,7 +33,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 import { extractTextFromPDF } from '../lib/pdf';
-import { getNextTurn, getSummary } from '../lib/gemini';
+import { getNextTurn, getSummary, generateFlashcards, Flashcard } from '../lib/gemini';
 import { 
   Upload, Send, ArrowLeft, CheckCircle2, Loader2, Zap, 
   Download, FileText, CircleStop, AlertCircle, Bot, Sparkles, MessageSquare, BookOpen
@@ -45,6 +45,7 @@ import { toPng } from 'html-to-image';
 import PanelistAvatar, { PANELISTS, PanelistId } from '../components/PanelistAvatar';
 import { ScoreCardTemplate } from '../components/ScoreCardTemplate';
 import LiveMeetingFlow from './LiveMeetingFlow';
+import FlashcardFlow from './FlashcardFlow';
 
 interface SimulationFlowProps {
   mode: SimulationType;
@@ -65,6 +66,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
   const [docText, setDocText] = useState('');
   const [currentTurn, setCurrentTurn] = useState<any>(null);
   const [answers, setAnswers] = useState<QuestionEntry[]>([]);
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isAnswering, setIsAnswering] = useState(false);
   const [isProcessingFeedback, setIsProcessingFeedback] = useState(false);
@@ -102,7 +104,10 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
 
   const startSimulation = async () => {
     if (!file) return;
-    const isInterview = mode === SimulationType.INTERVIEW || mode === SimulationType.MEETING_INTERVIEW;
+    const isInterview = 
+      mode === SimulationType.INTERVIEW || 
+      mode === SimulationType.MEETING_INTERVIEW || 
+      mode === SimulationType.FLASHCARD_INTERVIEW;
     if (isInterview && !jd.trim()) return;
 
     setErrorMsg(null);
@@ -119,16 +124,39 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
 
       setDocText(text);
       
-      const initialPanelist = isInterview ? 'shinta' : 'metod';
-      const firstTurn = await getNextTurn(mode, text, [], initialPanelist, jd, vibe, 1);
-      setCurrentTurn(firstTurn);
+      const isFlashcard = mode === SimulationType.FLASHCARD_SIDANG || mode === SimulationType.FLASHCARD_INTERVIEW;
+      
+      if (isFlashcard) {
+        const cards = await generateFlashcards(mode, text, jd, vibe);
+        if (cards.length === 0) {
+          throw new Error("Gagal membuat flashcard");
+        }
+        setFlashcards(cards);
+      } else {
+        const initialPanelist = isInterview ? 'shinta' : 'metod';
+        const firstTurn = await getNextTurn(mode, text, [], initialPanelist, jd, vibe, 1);
+        setCurrentTurn(firstTurn);
+      }
 
       try {
-        const isSidangMode = mode === SimulationType.SIDANG || mode === SimulationType.MEETING_SIDANG;
+        const isSidangMode = 
+          mode === SimulationType.SIDANG || 
+          mode === SimulationType.MEETING_SIDANG || 
+          mode === SimulationType.FLASHCARD_SIDANG;
+          
+        let simTitle = '';
+        if (mode === SimulationType.FLASHCARD_SIDANG) {
+          simTitle = `Flashcard Sidang: ${file.name}`;
+        } else if (mode === SimulationType.FLASHCARD_INTERVIEW) {
+          simTitle = `Flashcard Interview: ${file.name}`;
+        } else {
+          simTitle = isSidangMode ? `Sidang Santai: ${file.name}` : `Interview: ${file.name}`;
+        }
+
         const simRef = await addDoc(collection(db, 'simulations'), {
           userId: user.uid,
           type: mode,
-          title: isSidangMode ? `Sidang Santai: ${file.name}` : `Interview: ${file.name}`,
+          title: simTitle,
           createdAt: serverTimestamp(),
           documentText: text.substring(0, 50000),
           jobDescription: jd,
@@ -144,7 +172,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
       setStep('simulating');
     } catch (err) {
       console.error("Simulation start failed", err);
-      setErrorMsg("Gagal membaca dokumen PDF 📄. Pastikan file tidak rusak dan coba lagi.");
+      setErrorMsg("Gagal mempersiapkan latihan 📄. Pastikan koneksi aman dan file PDF tidak rusak.");
     } finally {
       setExtracting(false);
     }
@@ -465,6 +493,16 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                 jd={jd} 
                 user={user} 
                 vibe={vibe} 
+                onFinish={(finishedAnswers) => {
+                  setAnswers(finishedAnswers);
+                  finishSimulation(finishedAnswers);
+                }}
+                onCancel={onCancel}
+              />
+            ) : mode.startsWith('flashcard') ? (
+              <FlashcardFlow
+                mode={mode}
+                flashcards={flashcards}
                 onFinish={(finishedAnswers) => {
                   setAnswers(finishedAnswers);
                   finishSimulation(finishedAnswers);

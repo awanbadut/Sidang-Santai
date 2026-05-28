@@ -25,7 +25,8 @@ import {
   Flame,
   Target,
   Smile,
-  Coffee
+  Coffee,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -188,120 +189,118 @@ function BenefitCard({
 
 // ─── ModeCard (Duolingo / Notion Vibe) ───────────────────────────────────────
 
-interface ModeCardProps {
-  type: 'sidang' | 'interview';
+interface CompactModeCardProps {
   title: string;
-  tagline: string;
+  badge: string;
   description: string;
-  features: { icon: React.ElementType; label: string }[];
-  ctaText: string;
-  difficulty: { icon: React.ElementType; label: string };
-  accent: {
-    bg: string;
-    border: string;
-    shadow: string;
-    iconBg: string;
-    tagBg: string;
-    tagText: string;
-    tagIcon: React.ElementType;
-    cta: string;
-    ctaShadow: string;
-  };
-  MainIcon: React.ElementType;
+  Icon: React.ElementType;
+  colorTheme: 'pink' | 'purple' | 'emerald' | 'amber' | 'sky' | 'violet';
   onClick: () => void;
 }
 
-function ModeCard({
-  title,
-  tagline,
-  description,
-  features,
-  ctaText,
-  difficulty,
-  accent,
-  MainIcon,
-  onClick,
-}: ModeCardProps) {
-  const [hovered, setHovered] = useState(false);
-  const DiffIcon = difficulty.icon;
+function CompactModeCard({ title, badge, description, Icon, colorTheme, onClick }: CompactModeCardProps) {
+  const themes = {
+    pink: {
+      border: 'border-pink-200 hover:border-pink-300',
+      bg: 'bg-pink-50/30 hover:bg-pink-50/70',
+      iconBg: 'bg-pink-400 text-white',
+      badgeBg: 'bg-pink-100 text-pink-700',
+      shadow: 'hover:shadow-[0_6px_0_0_#ffccd5] active:translate-y-0.5',
+      btn: 'bg-pink-400 hover:bg-pink-500 shadow-[0_3px_0_0_#ff4d6d]'
+    },
+    purple: {
+      border: 'border-purple-200 hover:border-purple-300',
+      bg: 'bg-purple-50/30 hover:bg-purple-50/70',
+      iconBg: 'bg-purple-400 text-white',
+      badgeBg: 'bg-purple-100 text-purple-700',
+      shadow: 'hover:shadow-[0_6px_0_0_#e8daff] active:translate-y-0.5',
+      btn: 'bg-purple-400 hover:bg-purple-500 shadow-[0_3px_0_0_#a855f7]'
+    },
+    emerald: {
+      border: 'border-emerald-200 hover:border-emerald-300',
+      bg: 'bg-emerald-50/30 hover:bg-emerald-50/70',
+      iconBg: 'bg-emerald-400 text-white',
+      badgeBg: 'bg-emerald-100 text-emerald-700',
+      shadow: 'hover:shadow-[0_6px_0_0_#a7f3d0] active:translate-y-0.5',
+      btn: 'bg-emerald-400 hover:bg-emerald-500 shadow-[0_3px_0_0_#059669]'
+    },
+    amber: {
+      border: 'border-amber-200 hover:border-amber-300',
+      bg: 'bg-amber-50/30 hover:bg-amber-50/70',
+      iconBg: 'bg-amber-400 text-white',
+      badgeBg: 'bg-amber-100 text-amber-800',
+      shadow: 'hover:shadow-[0_6px_0_0_#fde047] active:translate-y-0.5',
+      btn: 'bg-amber-400 hover:bg-amber-500 shadow-[0_3px_0_0_#d97706]'
+    },
+    sky: {
+      border: 'border-sky-200 hover:border-sky-300',
+      bg: 'bg-sky-50/30 hover:bg-sky-50/70',
+      iconBg: 'bg-sky-400 text-white',
+      badgeBg: 'bg-sky-100 text-sky-700',
+      shadow: 'hover:shadow-[0_6px_0_0_#a2d2ff] active:translate-y-0.5',
+      btn: 'bg-sky-400 hover:bg-sky-500 shadow-[0_3px_0_0_#0ea5e9]'
+    },
+    violet: {
+      border: 'border-violet-200 hover:border-violet-300',
+      bg: 'bg-violet-50/30 hover:bg-violet-50/70',
+      iconBg: 'bg-violet-400 text-white',
+      badgeBg: 'bg-violet-100 text-violet-700',
+      shadow: 'hover:shadow-[0_6px_0_0_#ddd6fe] active:translate-y-0.5',
+      btn: 'bg-violet-400 hover:bg-violet-500 shadow-[0_3px_0_0_#7c3aed]'
+    }
+  }[colorTheme];
 
   return (
-    <motion.article
+    <motion.div
       variants={fadeUp}
-      whileHover={{ y: -8, transition: SPRING_BOUNCY }}
-      whileTap={{ scale: 0.96 }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
+      whileHover={{ y: -4, transition: SPRING_BOUNCY }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'group relative bg-white rounded-[2.5rem] border-[4px] cursor-pointer flex flex-col',
-        'transition-all duration-300',
-        accent.border,
-        hovered ? accent.shadow : 'shadow-none'
+        "bg-white rounded-[2rem] border-[3px] p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer transition-all duration-200",
+        themes.border,
+        themes.bg,
+        themes.shadow
       )}
     >
-      {/* ── Card header (Pastel Fill) ── */}
-      <div className={cn('relative p-6 md:p-8 rounded-t-[2.2rem] border-b-[4px]', accent.bg, accent.border)}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-3">
-            <span className={cn('inline-flex w-max items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full', accent.tagBg, accent.tagText)}>
-              <accent.tagIcon size={12} strokeWidth={3} /> {tagline}
-            </span>
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 leading-none">
+      <div className="flex items-center gap-4 min-w-0">
+        <div className={cn(
+          "w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-white shadow-sm shrink-0",
+          themes.iconBg
+        )}>
+          <Icon size={22} strokeWidth={2.5} />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-black text-slate-800 leading-snug">
               {title}
-            </h2>
-            <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-[24ch]">
-              {description}
-            </p>
+            </h3>
+            <span className={cn(
+              "text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shrink-0",
+              themes.badgeBg
+            )}>
+              {badge}
+            </span>
           </div>
-          <motion.div
-            animate={hovered ? { rotate: [0, -10, 10, -10, 0], scale: 1.1 } : { rotate: 0, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className={cn(
-              'w-16 h-16 flex-shrink-0 rounded-full flex items-center justify-center border-4 border-white shadow-sm',
-              accent.iconBg
-            )}
-          >
-            <MainIcon size={28} color="white" strokeWidth={2.5} />
-          </motion.div>
+          <p className="text-xs text-slate-500 font-bold mt-1.5 leading-normal">
+            {description}
+          </p>
         </div>
       </div>
 
-      {/* ── Feature list ── */}
-      <div className="px-6 py-4 md:px-8 md:py-6 flex-1">
-        <ul className="flex flex-col gap-3.5">
-          {features.map(({ icon: Icon, label }, i) => (
-            <li key={i} className="flex items-center gap-3 text-sm text-slate-600 font-bold">
-              <span className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', accent.tagBg, accent.tagText)}>
-                <Icon size={14} strokeWidth={2.5} />
-              </span>
-              {label}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* ── Card footer ── */}
-      <div className="px-6 pb-6 pt-2 md:px-8 md:pb-8 flex items-center gap-4">
-        <button
-          className={cn(
-            'flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-black text-white text-base',
-            'transition-all duration-150 transform active:translate-y-1 active:shadow-none',
-            accent.cta,
-            accent.ctaShadow
-          )}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-        >
-          {ctaText}
-          <motion.span animate={hovered ? { x: 5 } : { x: 0 }} transition={SPRING_BOUNCY}>
-            <ArrowRight size={18} strokeWidth={3} />
-          </motion.span>
-        </button>
-      </div>
-    </motion.article>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 active:translate-y-0.5 transition-all duration-150 transform active:shadow-none active:translate-y-1",
+          themes.btn
+        )}
+      >
+        <ArrowRight size={18} strokeWidth={3} />
+      </button>
+    </motion.div>
   );
 }
 
@@ -362,126 +361,101 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
       {/* ── Mode Cards ────────────────────────────────────────────────── */}
       <section className="px-4 md:px-8 pb-16">
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto"
-        >
-          <ModeCard
-            type="sidang"
-            title="Sidang Santai"
-            tagline="Mode Chat Mahasiswa"
-            description="Latih argumen bab per bab. Hadapi 3 dosen penguji imut via chat!"
-            features={[
-              { icon: MessageSquare, label: 'Interaksi Berbasis Teks 💬' },
-              { icon: Upload, label: 'Upload Draf TA (PDF) 📄' },
-              { icon: Users, label: 'Tiga Penguji Karakter Berbeda 🐱' },
-              { icon: Sparkles, label: 'Tanya-Jawab Interaktif ✨' },
-            ]}
-            ctaText="Mulai Chat! 🌸"
-            difficulty={{ icon: Flame, label: 'Deg-degan Maksimal' }}
-            accent={{
-              bg: 'bg-pink-50/50',
-              border: 'border-pink-200',
-              shadow: 'shadow-[0_12px_0_0_#ffccd5] -translate-y-2',
-              iconBg: 'bg-pink-400',
-              tagBg: 'bg-pink-100',
-              tagText: 'text-pink-700',
-              tagIcon: GraduationCap,
-              cta: 'bg-pink-400 hover:bg-pink-500',
-              ctaShadow: 'shadow-[0_6px_0_0_#ff4d6d]',
-            }}
-            MainIcon={GraduationCap}
-            onClick={() => onStart(SimulationType.SIDANG)}
-          />
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
+          
+          {/* 🎓 Rumpun Akademik: Sidang TA */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.1 }}
+            className="space-y-6 bg-pink-50/20 border-[3px] border-pink-100 rounded-[2.5rem] p-6 md:p-8"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-pink-400 text-white rounded-2xl flex items-center justify-center border-2 border-white shadow-sm shrink-0">
+                <GraduationCap size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-snug">Simulasi Sidang TA & Skripsi</h2>
+                <p className="text-xs text-slate-500 font-bold mt-0.5">Latih argumen riset & mental pertahankan skripsi</p>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              <CompactModeCard
+                title="Sidang Santai (Chat)"
+                badge="Santai"
+                description="Tanya-jawab tertulis bab per bab dengan 3 dosen penguji."
+                Icon={MessageSquare}
+                colorTheme="pink"
+                onClick={() => onStart(SimulationType.SIDANG)}
+              />
+              <CompactModeCard
+                title="Live Call Sidang (Suara)"
+                badge="Suara"
+                description="Uji mental lewat panggilan suara interaktif langsung dengan dosen."
+                Icon={Mic}
+                colorTheme="purple"
+                onClick={() => onStart(SimulationType.MEETING_SIDANG)}
+              />
+              <CompactModeCard
+                title="Flashcard Sidang (Kuis)"
+                badge="Pilihan Ganda"
+                description="Kuis interaktif A, B, C untuk uji teori & konsep skripsi Anda."
+                Icon={BookOpen}
+                colorTheme="emerald"
+                onClick={() => onStart(SimulationType.FLASHCARD_SIDANG)}
+              />
+            </div>
+          </motion.div>
 
-          <ModeCard
-            type="interview"
-            title="Interview Santuy"
-            tagline="Mode Chat Job Seeker"
-            description="Upload CV & Job Desc. Latihan simulasi interview kerja agar lancar dapat offering!"
-            features={[
-              { icon: MessageSquare, label: 'Interaksi Berbasis Teks 💬' },
-              { icon: FileText, label: 'Upload CV & Job Desc 📄' },
-              { icon: UserCheck, label: 'Simulasi Perilaku Profesional 👔' },
-              { icon: Smile, label: 'Umpan Balik Kesiapan 🍭' },
-            ]}
-            ctaText="Mulai Chat! 🍰"
-            difficulty={{ icon: Target, label: 'Asah Skill Ngomong' }}
-            accent={{
-              bg: 'bg-amber-50/70',
-              border: 'border-amber-200',
-              shadow: 'shadow-[0_12px_0_0_#fde047] -translate-y-2',
-              iconBg: 'bg-amber-400',
-              tagBg: 'bg-amber-100',
-              tagText: 'text-amber-800',
-              tagIcon: Briefcase,
-              cta: 'bg-amber-400 hover:bg-amber-500',
-              ctaShadow: 'shadow-[0_6px_0_0_#d97706]',
-            }}
-            MainIcon={Briefcase}
-            onClick={() => onStart(SimulationType.INTERVIEW)}
-          />
+          {/* 👔 Rumpun Karir: Interview Kerja */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.1 }}
+            className="space-y-6 bg-sky-50/20 border-[3px] border-sky-100 rounded-[2.5rem] p-6 md:p-8"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-sky-400 text-white rounded-2xl flex items-center justify-center border-2 border-white shadow-sm shrink-0">
+                <Briefcase size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-snug">Simulasi Interview Kerja</h2>
+                <p className="text-xs text-slate-500 font-bold mt-0.5">Asah taktik interview & latih mental offering</p>
+              </div>
+            </div>
 
-          <ModeCard
-            type="sidang"
-            title="Live Call Sidang"
-            tagline="BARU! Mode Voice Call"
-            description="Latihan sidang tatap muka via panggilan suara langsung dengan interupsi nyata!"
-            features={[
-              { icon: Mic, label: 'Interaksi Suara Langsung 🎙️' },
-              { icon: Zap, label: 'Interupsi & Sanggahan Realistis ⚡' },
-              { icon: Users, label: 'Dosen Saling Menimpali 👥' },
-              { icon: Sparkles, label: 'Suara Alami Bernada Manusia 🌸' },
-            ]}
-            ctaText="Mulai Call! 🎀"
-            difficulty={{ icon: Zap, label: 'Sangat Menantang' }}
-            accent={{
-              bg: 'bg-purple-50/60',
-              border: 'border-purple-200',
-              shadow: 'shadow-[0_12px_0_0_#e8daff] -translate-y-2',
-              iconBg: 'bg-purple-400',
-              tagBg: 'bg-purple-100',
-              tagText: 'text-purple-700',
-              tagIcon: Mic,
-              cta: 'bg-purple-400 hover:bg-purple-500',
-              ctaShadow: 'shadow-[0_6px_0_0_#a855f7]',
-            }}
-            MainIcon={Mic}
-            onClick={() => onStart(SimulationType.MEETING_SIDANG)}
-          />
+            <div className="flex flex-col gap-4">
+              <CompactModeCard
+                title="Interview Santuy (Chat)"
+                badge="HR & User"
+                description="Latihan interview berbasis chat sesuai CV & detail lowongan kerja."
+                Icon={MessageSquare}
+                colorTheme="amber"
+                onClick={() => onStart(SimulationType.INTERVIEW)}
+              />
+              <CompactModeCard
+                title="Live Call Interview (Suara)"
+                badge="Suara"
+                description="Panggilan suara interaktif dengan HRD/Tech Lead secara kritis."
+                Icon={Mic}
+                colorTheme="sky"
+                onClick={() => onStart(SimulationType.MEETING_INTERVIEW)}
+              />
+              <CompactModeCard
+                title="Flashcard Interview (Kuis)"
+                badge="Pilihan Ganda"
+                description="Kuis interaktif A, B, C untuk latih materi kerja & kompetensi CV."
+                Icon={BookOpen}
+                colorTheme="violet"
+                onClick={() => onStart(SimulationType.FLASHCARD_INTERVIEW)}
+              />
+            </div>
+          </motion.div>
 
-          <ModeCard
-            type="interview"
-            title="Live Call Interview"
-            tagline="BARU! Mode Voice Call"
-            description="Latihan interview kerja live. Hadapi cecaran HRD dalam percakapan cepat dan santai."
-            features={[
-              { icon: Mic, label: 'Interaksi Suara Langsung 🎙️' },
-              { icon: Target, label: 'Pertanyaan Terarah & Cepat 🎯' },
-              { icon: Briefcase, label: 'Manajemen Stres Ujian 🧸' },
-              { icon: Star, label: 'Umpan Balik Metode STAR ⭐' },
-            ]}
-            ctaText="Mulai Call! 🍭"
-            difficulty={{ icon: Zap, label: 'Sangat Menantang' }}
-            accent={{
-              bg: 'bg-sky-50/60',
-              border: 'border-sky-200',
-              shadow: 'shadow-[0_12px_0_0_#a2d2ff] -translate-y-2',
-              iconBg: 'bg-sky-400',
-              tagBg: 'bg-sky-100',
-              tagText: 'text-sky-700',
-              tagIcon: Mic,
-              cta: 'bg-sky-400 hover:bg-sky-500',
-              ctaShadow: 'shadow-[0_6px_0_0_#0ea5e9]',
-            }}
-            MainIcon={Mic}
-            onClick={() => onStart(SimulationType.MEETING_INTERVIEW)}
-          />
-
-        </motion.div>
+        </div>
       </section>
 
       {/* ── How It Works ──────────────────────────────────────────────── */}
