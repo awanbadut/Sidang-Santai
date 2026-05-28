@@ -298,7 +298,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
           </button>
           <div className="min-w-0">
             <h2 className="font-black text-base md:text-2xl text-slate-800 tracking-tight leading-none mb-0.5 truncate">
-              {(mode === SimulationType.SIDANG || mode === SimulationType.MEETING_SIDANG) ? 'Ruang Sidang' : 'Ruang Interview'} 🎓
+              {(mode === SimulationType.SIDANG || mode === SimulationType.MEETING_SIDANG || mode === SimulationType.FLASHCARD_SIDANG) ? 'Ruang Sidang' : 'Ruang Interview'} 🎓
             </h2>
             <p className="text-slate-500 text-[10px] md:text-sm font-bold bg-white/50 inline-block px-2 py-0.5 rounded-md truncate max-w-[180px] md:max-w-none">
               Tarik napas, {user.displayName?.split(' ')[0]}! Kamu pasti bisa. 🧸
@@ -422,7 +422,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                 </div>
 
                 {/* Job description */}
-                {(mode === SimulationType.INTERVIEW || mode === SimulationType.MEETING_INTERVIEW) && (
+                {(mode === SimulationType.INTERVIEW || mode === SimulationType.MEETING_INTERVIEW || mode === SimulationType.FLASHCARD_INTERVIEW) && (
                   <div className="space-y-2 md:space-y-3">
                     <label className="text-[10px] md:text-sm font-black text-purple-500 uppercase tracking-widest px-1 flex items-center gap-2">
                       <MessageSquare size={16} /> Detail Lowongan (Job Desc) 👔
@@ -469,7 +469,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                 </div>
 
                 <button 
-                  disabled={!file || ((mode === SimulationType.INTERVIEW || mode === SimulationType.MEETING_INTERVIEW) && !jd.trim()) || extracting}
+                  disabled={!file || ((mode === SimulationType.INTERVIEW || mode === SimulationType.MEETING_INTERVIEW || mode === SimulationType.FLASHCARD_INTERVIEW) && !jd.trim()) || extracting}
                   onClick={startSimulation}
                   className="w-full bg-emerald-400 text-white py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-black text-lg md:text-2xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed border-[3px] md:border-[4px] border-emerald-500 shadow-[0_5px_0_0_rgba(16,185,129,1)] md:shadow-[0_8px_0_0_rgba(16,185,129,1)] active:translate-y-1 active:shadow-none hover:translate-y-1 hover:shadow-none transition-all"
                 >
