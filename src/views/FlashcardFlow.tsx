@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flashcard } from '../lib/gemini';
 import { QuestionEntry, SimulationType } from '../types';
 import { PanelistId } from '../components/PanelistAvatar';
@@ -6,7 +6,7 @@ import PanelistAvatar from '../components/PanelistAvatar';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, CheckCircle2, XCircle, ChevronRight, 
-  Lightbulb, Trophy, Smile, ArrowLeft, Loader2
+  Lightbulb, Loader2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -24,6 +24,46 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [sessionAnswers, setSessionAnswers] = useState<QuestionEntry[]>([]);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  const handleNext = () => {
+    if (currentIndex + 1 < flashcards.length) {
+      setCurrentIndex(prev => prev + 1);
+      setSelectedOption(null);
+      setIsAnswered(false);
+    } else {
+      onFinish(sessionAnswers);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAnswered) {
+      setTimeLeft(null);
+      return;
+    }
+
+    setTimeLeft(4); // 4 seconds auto-advance countdown
+
+    const countdownInterval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const autoNextTimeout = setTimeout(() => {
+      handleNext();
+    }, 4000);
+
+    return () => {
+      clearInterval(countdownInterval);
+      clearTimeout(autoNextTimeout);
+    };
+  }, [isAnswered, currentIndex]);
 
   if (!flashcards || flashcards.length === 0) {
     return (
@@ -59,23 +99,13 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
     setSessionAnswers(prev => [...prev, answerEntry]);
   };
 
-  const handleNext = () => {
-    if (currentIndex + 1 < flashcards.length) {
-      setCurrentIndex(prev => prev + 1);
-      setSelectedOption(null);
-      setIsAnswered(false);
-    } else {
-      onFinish(sessionAnswers);
-    }
-  };
-
   const scoreCount = sessionAnswers.filter(a => a.score === 100).length;
 
   return (
-    <div className="flex flex-col h-full bg-[#fafaf9] max-w-4xl mx-auto w-full p-4 md:p-8 space-y-6">
+    <div className="flex flex-col h-full overflow-y-auto bg-[#fafaf9] max-w-4xl mx-auto w-full p-4 md:p-8 space-y-6 scrollbar-thin">
       
       {/* ── Progress & Status ── */}
-      <div className="flex items-center justify-between bg-white px-5 py-4 rounded-3xl border-[3px] border-purple-100/70 shadow-sm">
+      <div className="flex items-center justify-between bg-white px-5 py-4 rounded-3xl border-[3px] border-purple-100/70 shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-500">
             <Sparkles size={20} />
@@ -99,7 +129,7 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
       </div>
 
       {/* ── Progress Bar ── */}
-      <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden border-[2px] border-white shadow-inner">
+      <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden border-[2px] border-white shadow-inner shrink-0">
         <div 
           className="bg-gradient-to-r from-pink-400 via-purple-400 to-sky-400 h-full transition-all duration-300 rounded-full"
           style={{ width: `${((currentIndex + 1) / flashcards.length) * 100}%` }}
@@ -107,7 +137,7 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
       </div>
 
       {/* ── Flashcard Main Card ── */}
-      <div className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full">
+      <div className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full pb-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -136,6 +166,9 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
                 const isSelected = selectedOption === idx;
                 const isCorrectOption = idx === currentCard.correctOptionIndex;
                 
+                const optionLetter = ['A', 'B', 'C'][idx];
+                const cleanOption = option.replace(/^[A-C]\.\s*/i, '');
+                
                 let btnStyle = "border-purple-100 bg-white hover:border-purple-300 hover:bg-purple-50/50 text-slate-700 shadow-[0_4px_0_0_#f3e8ff]";
                 let iconEl = null;
 
@@ -159,11 +192,25 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
                     whileHover={!isAnswered ? { y: -2, scale: 1.01 } : {}}
                     whileTap={!isAnswered ? { scale: 0.98 } : {}}
                     className={cn(
-                      "w-full text-left p-5 rounded-2xl border-[3px] font-bold text-sm md:text-base flex items-center justify-between gap-4 transition-all duration-150 active:translate-y-1 active:shadow-none",
+                      "w-full text-left p-4.5 rounded-2xl border-[3px] font-bold text-sm md:text-base flex items-center justify-between gap-4 transition-all duration-150 active:translate-y-1 active:shadow-none group",
                       btnStyle
                     )}
                   >
-                    <span className="leading-relaxed">{option}</span>
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm border-2 shrink-0 transition-all",
+                        isAnswered
+                          ? isCorrectOption
+                            ? "bg-emerald-200 border-emerald-400 text-emerald-800"
+                            : isSelected
+                              ? "bg-rose-200 border-rose-400 text-rose-800"
+                              : "bg-slate-100 border-slate-200 text-slate-400"
+                          : "bg-purple-100 border-purple-200 text-purple-600 group-hover:bg-purple-200 group-hover:border-purple-300"
+                      )}>
+                        {optionLetter}
+                      </div>
+                      <span className="leading-relaxed">{cleanOption}</span>
+                    </div>
                     {iconEl}
                   </motion.button>
                 );
@@ -201,22 +248,43 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
               )}
             </AnimatePresence>
 
-            {/* Action Button */}
+            {/* Action Button & Auto-Advance Progress */}
             {isAnswered && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={handleNext}
-                className={cn(
-                  "w-full py-4 rounded-2xl font-black text-white text-base md:text-lg flex items-center justify-center gap-2 border-[3px]",
-                  selectedOption === currentCard.correctOptionIndex
-                    ? "bg-emerald-400 border-emerald-500 shadow-[0_5px_0_0_#059669]"
-                    : "bg-purple-400 border-purple-500 shadow-[0_5px_0_0_#7c3aed]"
-                )}
-              >
-                {currentIndex + 1 === flashcards.length ? 'Lihat Hasil Rapor! 🎓' : 'Pertanyaan Berikutnya 🐾'}
-                <ChevronRight size={18} strokeWidth={3} />
-              </motion.button>
+              <div className="space-y-3 mt-2">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400 px-1">
+                  <span>Auto-advance</span>
+                  <span>Berikutnya dalam {timeLeft}s</span>
+                </div>
+                
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-white shadow-inner">
+                  <motion.div
+                    initial={{ width: '100%' }}
+                    animate={{ width: '0%' }}
+                    transition={{ duration: 4, ease: 'linear' }}
+                    className={cn(
+                      "h-full rounded-full bg-gradient-to-r",
+                      selectedOption === currentCard.correctOptionIndex
+                        ? "from-emerald-400 to-teal-400"
+                        : "from-purple-400 to-indigo-400"
+                    )}
+                  />
+                </div>
+
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={handleNext}
+                  className={cn(
+                    "w-full py-4 rounded-2xl font-black text-white text-base md:text-lg flex items-center justify-center gap-2 border-[3px] transition-all cursor-pointer active:translate-y-1 active:shadow-none",
+                    selectedOption === currentCard.correctOptionIndex
+                      ? "bg-emerald-400 border-emerald-500 shadow-[0_5px_0_0_#059669] hover:bg-emerald-500"
+                      : "bg-purple-400 border-purple-500 shadow-[0_5px_0_0_#7c3aed] hover:bg-purple-500"
+                  )}
+                >
+                  {currentIndex + 1 === flashcards.length ? 'Lihat Hasil Rapor! 🎓' : 'Pertanyaan Berikutnya 🐾'}
+                  <ChevronRight size={18} strokeWidth={3} />
+                </motion.button>
+              </div>
             )}
 
           </motion.div>
