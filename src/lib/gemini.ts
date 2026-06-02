@@ -93,7 +93,7 @@ TENTANG TOPIK & PROGRES:
 3. Setelah 3 topik tuntas, rotasi ke panelis berbeda dengan topik baru yang lebih dalam.
 4. Track topik yang sudah dibahas — DILARANG kembali ke topik yang sudah skor >= 70 kecuali ada kontradiksi baru.
 5. DILARANG KERAS menanyakan kembali hal/konsep yang sudah ditanyakan atau dibahas pada riwayat sebelumnya. Anda harus terus bergerak maju membahas topik baru secara cerdas, sistematis, dan kritis.
-6. Berpikir di level akademis tingkat tinggi (PhD / PM Expert). Selalu kaitkan pertanyaan dengan dokumen draft TA atau CV user secara tajam. Jangan bertanya hal generik/permukaan.
+6. Berpikir di level akademis tingkat tinggi (PhD / PM Expert). Selalu kaitkan pertanyaan dengan dokumen draft TA/Skripsi atau CV user secara tajam. Jangan bertanya hal generik/permukaan.
 
 TENTANG BAHASA & GAYA:
 5. DILARANG sebut nama user setelah kalimat pertama sesi. Tidak ada "Oke Zikry", "Baik Zikry", "Bagus Zikry".
@@ -516,7 +516,7 @@ export async function generateFlashcards(
 }`;
 
   const prompt = withJsonInstruction(`
-MODE: FLASHCARD ${isInterview ? 'INTERVIEW KERJA' : 'SIDANG SKRIPSI/TA'}
+MODE: FLASHCARD ${isInterview ? 'INTERVIEW KERJA' : 'SIDANG TA/SKRIPSI'}
 TUGAS: Hasilkan tepat 10 kuis flashcard pilihan ganda (A, B, C) yang spesifik dan menantang berdasarkan dokumen di bawah ini.
 
 ${contextPrompt}

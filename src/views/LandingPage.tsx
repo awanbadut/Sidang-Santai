@@ -63,7 +63,7 @@ const STEPS = [
   {
     num: '01',
     title: 'Pilih Mode Latihanmu 🎀',
-    desc: 'Mau main peran Sidang TA yang seru atau Interview Kerja? Pilih petualanganmu hari ini!',
+    desc: 'Mau main peran Sidang TA/Skripsi yang seru atau Interview Kerja? Pilih petualanganmu hari ini!',
   },
   {
     num: '02',
@@ -81,7 +81,7 @@ const BENEFITS = [
   {
     icon: Smile,
     title: 'Penguji Sangat Pintar 🧸',
-    desc: 'Bukan sekadar sistem biasa. Penguji kami membaca PDF TA-mu dan menanyakan poin penting secara cerdas.',
+    desc: 'Bukan sekadar sistem biasa. Penguji kami membaca PDF TA/Skripsi-mu dan menanyakan poin penting secara cerdas.',
   },
   {
     icon: CheckCircle2,
@@ -341,7 +341,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             variants={fadeUp}
             className="text-base md:text-xl text-slate-500 font-medium max-w-2xl mx-auto mb-8 md:mb-10 leading-relaxed px-4 md:px-0"
           >
-            Upload PDF TA atau CV kamu. Biar para penguji kami bermain peran sebagai 'dosen galak' atau 'HRD kritis' buat melatih mentalmu sampai berani tampil dengan asyik!
+            Upload PDF TA/Skripsi atau CV kamu. Biar para penguji kami bermain peran sebagai 'dosen galak' atau 'HRD kritis' buat melatih mentalmu sampai berani tampil dengan asyik!
           </motion.p>
 
           {/* Stats row */}
@@ -363,7 +363,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       <section className="px-4 md:px-8 pb-16">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
           
-          {/* 🎓 Rumpun Akademik: Sidang TA */}
+          {/* 🎓 Rumpun Akademik: Sidang TA/Skripsi */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -376,8 +376,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 <GraduationCap size={24} strokeWidth={2.5} />
               </div>
               <div>
-                <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-snug">Simulasi Sidang TA & Skripsi</h2>
-                <p className="text-xs text-slate-500 font-bold mt-0.5">Latih argumen riset & mental pertahankan skripsi</p>
+                <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-snug">Simulasi Sidang TA/Skripsi</h2>
+                <p className="text-xs text-slate-500 font-bold mt-0.5">Latih argumen riset & mental pertahankan skripsi/TA</p>
               </div>
             </div>
             

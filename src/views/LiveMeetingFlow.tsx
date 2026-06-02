@@ -506,7 +506,7 @@ export default function LiveMeetingFlow({
           </div>
           <div>
             <h1 className="font-bold text-sm md:text-base">
-              {mode.includes('sidang') ? 'Sidang TA Live 🎓' : 'Interview Kerja Live 💼'}
+              {mode.includes('sidang') ? 'Sidang TA/Skripsi Live 🎓' : 'Interview Kerja Live 💼'}
             </h1>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex flex-wrap items-center gap-1 md:gap-2">
               <span>Sidang Santai Room 🧸</span>

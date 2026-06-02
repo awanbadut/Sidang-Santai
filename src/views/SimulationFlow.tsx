@@ -412,7 +412,13 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                 {/* Upload area */}
                 <div className="space-y-2 md:space-y-3">
                   <label className="text-[10px] md:text-sm font-black text-purple-500 uppercase tracking-widest px-1 flex items-center gap-2">
-                    <FileText size={16} /> Dokumen Utama (PDF) 📄
+                    <FileText size={16} /> {
+                      (mode === SimulationType.SIDANG || 
+                       mode === SimulationType.MEETING_SIDANG || 
+                       mode === SimulationType.FLASHCARD_SIDANG) 
+                        ? 'Draf TA/Skripsi (PDF) 📄' 
+                        : 'CV / Resume (PDF) 📄'
+                    }
                   </label>
                   <label className={cn(
                     "border-[3px] md:border-[4px] border-dashed rounded-2xl md:rounded-[2.5rem] p-6 md:p-14 flex flex-col items-center justify-center gap-3 md:gap-4 cursor-pointer transition-all bg-white active:scale-[0.99]",
@@ -437,7 +443,15 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
                           <Upload strokeWidth={2.5} className="w-6 h-6 md:w-9 md:h-9" />
                         </div>
                         <div className="text-center">
-                          <p className="font-black text-sm md:text-lg text-slate-700 leading-tight">Taruh Draf / CV Kamu di Sini</p>
+                          <p className="font-black text-sm md:text-lg text-slate-700 leading-tight">
+                            {
+                              (mode === SimulationType.SIDANG || 
+                               mode === SimulationType.MEETING_SIDANG || 
+                               mode === SimulationType.FLASHCARD_SIDANG) 
+                                ? 'Taruh Draf TA/Skripsi Kamu di Sini' 
+                                : 'Taruh CV / Resume Kamu di Sini'
+                            }
+                          </p>
                           <p className="text-[10px] text-slate-400 font-bold mt-1">Maksimal 50MB · Cuma PDF ya!</p>
                         </div>
                       </div>
