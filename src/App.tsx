@@ -62,7 +62,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className={cn(
+      "flex flex-col font-sans transition-all duration-300",
+      view === 'simulation' ? "h-screen overflow-hidden" : "min-h-screen"
+    )}>
       <Navbar 
         user={user} 
         onViewHistory={() => setView('history')} 
@@ -70,8 +73,10 @@ export default function App() {
       />
       
       <main className={cn(
-        "flex-1 container mx-auto px-4 py-4 md:py-8 transition-all duration-300",
-        view === 'simulation' ? "max-w-7xl" : "max-w-7xl"
+        "flex-1 container mx-auto transition-all duration-300",
+        view === 'simulation' 
+          ? "max-w-7xl h-full overflow-hidden px-0 py-0 md:px-4 md:py-4" 
+          : "max-w-7xl px-4 py-4 md:py-8"
       )}>
         <AnimatePresence mode="wait">
           {view === 'landing' && (
@@ -91,6 +96,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
+              className="h-full flex flex-col overflow-hidden"
             >
               <SimulationFlow 
                 mode={selectedMode} 
@@ -113,9 +119,11 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <footer className="py-6 text-center text-slate-400 text-sm border-t border-slate-100">
-        &copy; {new Date().getFullYear()} Sidang Santai. Semua hak dilindungi.
-      </footer>
+      {view !== 'simulation' && (
+        <footer className="py-6 text-center text-slate-400 text-sm border-t border-slate-100">
+          &copy; {new Date().getFullYear()} Sidang Santai. Semua hak dilindungi.
+        </footer>
+      )}
     </div>
   );
 }

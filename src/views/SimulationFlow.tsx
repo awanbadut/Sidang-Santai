@@ -305,7 +305,7 @@ export default function SimulationFlow({ mode, onCancel, user }: SimulationFlowP
       overflow-hidden
       border-0 md:border-[4px] md:border-purple-100/70
       flex flex-col
-      h-[100dvh] md:h-[800px]
+      h-full md:max-h-[800px]
       relative
       max-w-7xl mx-auto
       w-full
