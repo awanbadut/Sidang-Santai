@@ -6,7 +6,7 @@ import PanelistAvatar from '../components/PanelistAvatar';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, CheckCircle2, XCircle, ChevronRight, 
-  Lightbulb, Loader2
+  Lightbulb, Loader2, Clock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -25,6 +25,11 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
   const [isAnswered, setIsAnswered] = useState(false);
   const [sessionAnswers, setSessionAnswers] = useState<QuestionEntry[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(120); // 2 menit = 120 detik
+
+  const currentCard = flashcards[currentIndex];
+  const isSidang = mode === SimulationType.FLASHCARD_SIDANG;
+  const panelistId: PanelistId = isSidang ? 'metod' : 'shinta';
 
   const handleNext = () => {
     if (currentIndex + 1 < flashcards.length) {
@@ -36,13 +41,38 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
     }
   };
 
+  const handleTimeOut = () => {
+    if (isAnswered) return;
+    setSelectedOption(null);
+    setIsAnswered(true);
+
+    const answerEntry: QuestionEntry = {
+      question: currentCard.question,
+      answer: "Tidak menjawab (Waktu Habis) ⏰",
+      feedback: `Waktu Anda habis untuk menjawab pertanyaan ini! ${currentCard.feedback}`,
+      score: 0,
+      suggestedAnswer: `Jawaban Benar: ${currentCard.options[currentCard.correctOptionIndex]}`,
+      panelistId: panelistId,
+      isFollowUp: false
+    };
+
+    setSessionAnswers(prev => [...prev, answerEntry]);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  // 1. Timer Auto-Advance setelah menjawab
   useEffect(() => {
     if (!isAnswered) {
       setTimeLeft(null);
       return;
     }
 
-    setTimeLeft(4); // 4 seconds auto-advance countdown
+    setTimeLeft(4); // 4 detik hitung mundur auto-advance
 
     const countdownInterval = setInterval(() => {
       setTimeLeft(prev => {
@@ -65,6 +95,26 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
     };
   }, [isAnswered, currentIndex]);
 
+  // 2. Timer 120 detik per soal
+  useEffect(() => {
+    if (isAnswered) return;
+
+    setQuestionTimeLeft(120);
+
+    const timer = setInterval(() => {
+      setQuestionTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleTimeOut();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, isAnswered]);
+
   if (!flashcards || flashcards.length === 0) {
     return (
       <div className="h-[400px] flex flex-col items-center justify-center gap-4">
@@ -73,10 +123,6 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
       </div>
     );
   }
-
-  const currentCard = flashcards[currentIndex];
-  const isSidang = mode === SimulationType.FLASHCARD_SIDANG;
-  const panelistId: PanelistId = isSidang ? 'metod' : 'shinta';
 
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
@@ -120,6 +166,21 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none block mb-0.5">Benar</span>
             <span className="text-sm font-black text-emerald-500">{scoreCount} / {currentIndex + (isAnswered ? 1 : 0)}</span>
           </div>
+          <div className="w-px h-8 bg-slate-100" />
+          
+          {/* ⏰ Timer per Soal (120 Detik) */}
+          <div className={cn(
+            "flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border-2 font-black text-sm transition-all",
+            isAnswered 
+              ? "bg-slate-50 border-slate-200 text-slate-400" 
+              : questionTimeLeft <= 15
+                ? "bg-rose-50 border-rose-200 text-rose-500 animate-pulse"
+                : "bg-amber-50 border-amber-200 text-amber-600"
+          )}>
+            <Clock size={16} />
+            <span>{isAnswered ? "Selesai ✨" : formatTime(questionTimeLeft)}</span>
+          </div>
+          
           <div className="w-px h-8 bg-slate-100" />
           <div className="flex flex-col text-right">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none block mb-0.5">Skor</span>
@@ -240,7 +301,11 @@ export default function FlashcardFlow({ mode, flashcards, onFinish, onCancel }: 
                   </div>
                   <div className="space-y-1 min-w-0">
                     <span className="text-[10px] font-black uppercase tracking-wider block">
-                      {selectedOption === currentCard.correctOptionIndex ? "Jawaban Kamu Benar! 🎉" : "Kurang Tepat, Tapi Jangan Menyerah! 🧸"}
+                      {selectedOption === currentCard.correctOptionIndex 
+                        ? "Jawaban Kamu Benar! 🎉" 
+                        : selectedOption === null
+                          ? "Waktu Kamu Habis! ⏰"
+                          : "Kurang Tepat, Tapi Jangan Menyerah! 🧸"}
                     </span>
                     <p className="text-xs font-bold leading-relaxed">{currentCard.feedback}</p>
                   </div>
