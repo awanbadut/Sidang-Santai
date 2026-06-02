@@ -64,7 +64,7 @@ export default function App() {
   return (
     <div className={cn(
       "flex flex-col font-sans transition-all duration-300",
-      view === 'simulation' ? "h-screen overflow-hidden" : "min-h-screen"
+      view === 'simulation' ? "h-[100dvh] overflow-hidden" : "min-h-screen"
     )}>
       <Navbar 
         user={user} 
@@ -73,9 +73,9 @@ export default function App() {
       />
       
       <main className={cn(
-        "flex-1 container mx-auto transition-all duration-300",
+        "flex-1 container mx-auto transition-all duration-300 min-h-0",
         view === 'simulation' 
-          ? "max-w-7xl h-full overflow-hidden px-0 py-0 md:px-4 md:py-4" 
+          ? "max-w-7xl overflow-hidden px-0 py-0 md:px-4 md:py-4" 
           : "max-w-7xl px-4 py-4 md:py-8"
       )}>
         <AnimatePresence mode="wait">
